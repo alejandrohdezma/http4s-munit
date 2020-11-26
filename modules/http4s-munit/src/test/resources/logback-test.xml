@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="false" debug="false">
+    <logger name="org.http4s.server" level="off"/>
+    <logger name="org.http4s.client" level="off"/>
+</configuration>
