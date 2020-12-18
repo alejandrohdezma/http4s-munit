@@ -25,7 +25,7 @@ lazy val `http4s-munit` = module
 
 lazy val `http4s-munit-testcontainers` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.19")
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.38.7")
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.38.8")
   .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.14")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.14")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.14")
