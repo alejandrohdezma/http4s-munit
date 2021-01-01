@@ -15,19 +15,19 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.20")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.14")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.14")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.14")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.15")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.15")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.15")
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-2" % "0.12.0")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.14" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.15" % Test)
   .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.2" cross CrossVersion.full))
 
 lazy val `http4s-munit-testcontainers` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.20")
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.38.8")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.14")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.14")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.14")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.15")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.15")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.15")
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-2" % "0.12.0")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % Test)
