@@ -14,7 +14,7 @@ lazy val documentation = project
   .settings(mdocOut := file("."))
 
 lazy val `http4s-munit` = module
-  .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.20")
+  .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.21")
   .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.16")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.16")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.16")
