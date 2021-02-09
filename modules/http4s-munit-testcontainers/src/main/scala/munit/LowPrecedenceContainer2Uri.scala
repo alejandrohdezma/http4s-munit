@@ -20,6 +20,7 @@ import com.dimafeng.testcontainers.SingleContainer
 import org.http4s.Uri
 import org.testcontainers.containers.GenericContainer
 
+@SuppressWarnings(Array("scalafix:Disable.head"))
 trait LowPrecedenceContainer2Uri {
 
   implicit def GenericContainer2Uri[A <: SingleContainer[GenericContainer[_]]]: A => Uri = container =>
