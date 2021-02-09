@@ -88,12 +88,28 @@ abstract class HttpFromContainerSuite
         withContainers { (container: Containers) =>
           val uri = Uri.resolve(container2Uri(container), request.uri)
 
-          client.run(request.withUri(uri)).use { response =>
-            body(response) match {
-              case io: IO[Any] => io
-              case a           => IO(a)
+          client
+            .run(request.withUri(uri))
+            .use { response =>
+              IO(body(response)).attempt.flatMap {
+                case Right(io: IO[Any]) => io
+                case Right(a)           => IO.pure(a)
+                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                  response.bodyText.compile.string >>= { body =>
+                    t.getMessage().split("Clues \\{") match {
+                      case Array(p1, p2) =>
+                        val bodyClue = s"""Clues {\n  response.bodyText.compile.string: String = "$body""""
+                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                      case _ => IO.raiseError(t)
+                    }
+                  }
+                case Left(t: FailExceptionLike[_]) =>
+                  response.bodyText.compile.string >>= { body =>
+                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                  }
+                case Left(t) => IO.raiseError(t)
+              }
             }
-          }
         }
       }
 

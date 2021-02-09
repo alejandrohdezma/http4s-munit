@@ -17,6 +17,6 @@ jobs:
     name: Auto rebase PRs
     runs-on: ubuntu-latest
     steps:
-      - uses: Label305/AutoRebase@v0.1.5
+      - uses: Label305/AutoRebase@v0.1.10
         with:
           github_token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
