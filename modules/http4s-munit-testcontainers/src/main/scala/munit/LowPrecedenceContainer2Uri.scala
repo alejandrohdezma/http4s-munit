@@ -16,12 +16,13 @@
 
 package munit
 
-import com.dimafeng.testcontainers.GenericContainer
+import com.dimafeng.testcontainers.SingleContainer
 import org.http4s.Uri
+import org.testcontainers.containers.GenericContainer
 
 trait LowPrecedenceContainer2Uri {
 
-  implicit def GenericContainer2Uri[A <: GenericContainer]: A => Uri = container =>
+  implicit def GenericContainer2Uri[A <: SingleContainer[GenericContainer[_]]]: A => Uri = container =>
     Uri.unsafeFromString(s"http://localhost:${container.mappedPort(container.exposedPorts.head)}")
 
 }
