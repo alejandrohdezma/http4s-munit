@@ -17,6 +17,7 @@
 package munit
 
 import cats.effect.IO
+import cats.effect.SyncIO
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
@@ -56,7 +57,7 @@ abstract class HttpFromContainerSuite
     s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue"
   }
 
-  def httpClient: FunFixture[Client[IO]] = ResourceFixture(AsyncHttpClient.resource[IO]())
+  def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
   case class TestCreator(request: Request[IO], testOptions: TestOptions) {
 
