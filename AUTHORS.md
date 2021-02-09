@@ -8,11 +8,11 @@
 
 The maintainers of the project are:
 
-- [![alejandrohdezma](https://avatars0.githubusercontent.com/u/9027541?v=4&s=20) **Alejandro Hernández (alejandrohdezma)**](https://github.com/alejandrohdezma)
-- [![gutiory](https://avatars2.githubusercontent.com/u/3316502?v=4&s=20) **Jose Gutiérrez de Ory (gutiory)**](https://github.com/gutiory)
+- [![alejandrohdezma](https://avatars.githubusercontent.com/u/9027541?v=4&s=20) **Alejandro Hernández (alejandrohdezma)**](https://github.com/alejandrohdezma)
+- [![gutiory](https://avatars.githubusercontent.com/u/3316502?v=4&s=20) **Jose Gutiérrez de Ory (gutiory)**](https://github.com/gutiory)
 
 ## Contributors
 
 These are the people that have contributed to the _http4s-munit_ project:
 
-- [![alejandrohdezma](https://avatars0.githubusercontent.com/u/9027541?v=4&s=20) **alejandrohdezma**](https://github.com/alejandrohdezma)
+- [![alejandrohdezma](https://avatars.githubusercontent.com/u/9027541?v=4&s=20) **alejandrohdezma**](https://github.com/alejandrohdezma)
