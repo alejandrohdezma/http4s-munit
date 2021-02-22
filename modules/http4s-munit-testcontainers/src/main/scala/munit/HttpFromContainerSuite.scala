@@ -58,12 +58,22 @@ abstract class HttpFromContainerSuite
     s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue"
   }
 
-  def munitHttp4sBodyPrettifier(body: String): String = {
-    val result = parse(body)
+  def munitHttp4sBodyPrettifier(body: String): String =
+    parse(body)
       .map(_.spaces2)
-      .getOrElse(body)
+      .fold(
+        _ => body,
+        json =>
+          if (munitAnsiColors)
+            json
+              .replaceAll("""(\"\w+\") : """, Console.CYAN + "$1" + Console.RESET + " : ")
+              .replaceAll(""" : (\"\w+\")""", " : " + Console.YELLOW + "$1" + Console.RESET)
+              .replaceAll(""" : (\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
+              .replaceAll(""" : true""", " : " + Console.MAGENTA + "true" + Console.RESET)
+              .replaceAll(""" : false""", " : " + Console.MAGENTA + "false" + Console.RESET)
+          else json
+      )
 
-      result
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
   case class TestCreator(request: Request[IO], testOptions: TestOptions) {
