@@ -16,7 +16,10 @@
 
 package munit
 
+import io.circe.Json
+import io.circe.syntax._
 import org.http4s.Method.GET
+import org.http4s.circe._
 import org.http4s.client.dsl.io._
 import org.http4s.syntax.all._
 
@@ -24,10 +27,15 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite {
 
   override val containerDef = DummyHttpContainer.Def()
 
-  test(GET(uri"ping")) { response =>
+  test(GET(uri"posts")) { response =>
     assertEquals(response.status.code, 200)
 
-    assertIO(response.as[String], "pong")
+    val expected = Json.arr(
+      Json.obj("id" := 1, "body" := "foo", "published" := true),
+      Json.obj("id" := 2, "body" := "bar", "published" := false)
+    )
+
+    assertIO(response.as[Json], expected)
   }
 
 }

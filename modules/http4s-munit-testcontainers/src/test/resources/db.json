@@ -1,0 +1,6 @@
+{
+  "posts": [
+    { "id": 1, "body": "foo", "published": true },
+    { "id": 2, "body": "bar", "published": false }
+  ]
+}
