@@ -106,7 +106,9 @@ abstract class HttpFromContainerSuite
                   response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
                     t.getMessage().split("Clues \\{") match {
                       case Array(p1, p2) =>
-                        val bodyClue = s"""Clues {\n  response.bodyText.compile.string: String = "$body""""
+                        val bodyClue =
+                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
                         IO.raiseError(t.withMessage(p1 + bodyClue + p2))
                       case _ => IO.raiseError(t)
                     }
