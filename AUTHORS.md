@@ -16,3 +16,4 @@ The maintainers of the project are:
 These are the people that have contributed to the _http4s-munit_ project:
 
 - [![alejandrohdezma](https://avatars.githubusercontent.com/u/9027541?v=4&s=20) **alejandrohdezma**](https://github.com/alejandrohdezma)
+- [![gutiory](https://avatars.githubusercontent.com/u/3316502?v=4&s=20) **gutiory**](https://github.com/gutiory)
