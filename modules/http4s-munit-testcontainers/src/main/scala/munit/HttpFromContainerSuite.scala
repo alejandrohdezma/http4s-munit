@@ -21,6 +21,7 @@ import cats.effect.SyncIO
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import io.circe.parser.parse
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
@@ -57,6 +58,12 @@ abstract class HttpFromContainerSuite
     s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue"
   }
 
+  def munitHttp4sBodyPrettifier(body: String): String = {
+    val result = parse(body)
+      .map(_.spaces2)
+      .getOrElse(body)
+
+      result
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
   case class TestCreator(request: Request[IO], testOptions: TestOptions) {
@@ -96,7 +103,7 @@ abstract class HttpFromContainerSuite
                 case Right(io: IO[Any]) => io
                 case Right(a)           => IO.pure(a)
                 case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string >>= { body =>
+                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
                     t.getMessage().split("Clues \\{") match {
                       case Array(p1, p2) =>
                         val bodyClue = s"""Clues {\n  response.bodyText.compile.string: String = "$body""""
@@ -105,7 +112,7 @@ abstract class HttpFromContainerSuite
                     }
                   }
                 case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string >>= { body =>
+                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
                     IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
                   }
                 case Left(t) => IO.raiseError(t)
