@@ -71,6 +71,7 @@ abstract class HttpFromContainerSuite
               .replaceAll(""" : (\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
               .replaceAll(""" : true""", " : " + Console.MAGENTA + "true" + Console.RESET)
               .replaceAll(""" : false""", " : " + Console.MAGENTA + "false" + Console.RESET)
+              .replaceAll(""" : null""", " : " + Console.MAGENTA + "null" + Console.RESET)
           else json
       )
 
