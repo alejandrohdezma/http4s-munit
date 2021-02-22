@@ -17,6 +17,7 @@
 package munit
 
 import com.dimafeng.testcontainers.GenericContainer
+import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.Wait
 
 final case class DummyHttpContainer(underlying: GenericContainer) extends GenericContainer(underlying)
@@ -27,9 +28,10 @@ object DummyHttpContainer {
       extends GenericContainer.Def[DummyHttpContainer](
         new DummyHttpContainer(
           GenericContainer(
-            dockerImage = "briceburg/ping-pong",
+            dockerImage = "clue/json-server",
             exposedPorts = Seq(80),
-            waitStrategy = Wait.forHttp("/ping")
+            classpathResourceMapping = Seq(("db.json", "/data/db.json", BindMode.READ_ONLY)),
+            waitStrategy = Wait.forHttp("/posts")
           )
         )
       )

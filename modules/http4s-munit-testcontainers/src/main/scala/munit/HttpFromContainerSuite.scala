@@ -21,6 +21,7 @@ import cats.effect.SyncIO
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import io.circe.parser.parse
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
@@ -56,6 +57,22 @@ abstract class HttpFromContainerSuite
 
     s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue"
   }
+
+  def munitHttp4sBodyPrettifier(body: String): String =
+    parse(body)
+      .map(_.spaces2)
+      .fold(
+        _ => body,
+        json =>
+          if (munitAnsiColors)
+            json
+              .replaceAll("""(\"\w+\") : """, Console.CYAN + "$1" + Console.RESET + " : ")
+              .replaceAll(""" : (\"\w+\")""", " : " + Console.YELLOW + "$1" + Console.RESET)
+              .replaceAll(""" : (\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
+              .replaceAll(""" : true""", " : " + Console.MAGENTA + "true" + Console.RESET)
+              .replaceAll(""" : false""", " : " + Console.MAGENTA + "false" + Console.RESET)
+          else json
+      )
 
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
@@ -96,16 +113,18 @@ abstract class HttpFromContainerSuite
                 case Right(io: IO[Any]) => io
                 case Right(a)           => IO.pure(a)
                 case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string >>= { body =>
+                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
                     t.getMessage().split("Clues \\{") match {
                       case Array(p1, p2) =>
-                        val bodyClue = s"""Clues {\n  response.bodyText.compile.string: String = "$body""""
+                        val bodyClue =
+                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
                         IO.raiseError(t.withMessage(p1 + bodyClue + p2))
                       case _ => IO.raiseError(t)
                     }
                   }
                 case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string >>= { body =>
+                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
                     IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
                   }
                 case Left(t) => IO.raiseError(t)
