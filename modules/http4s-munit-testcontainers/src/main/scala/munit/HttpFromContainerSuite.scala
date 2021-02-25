@@ -68,7 +68,7 @@ abstract class HttpFromContainerSuite
             json
               .replaceAll("""(\"\w+\") : """, Console.CYAN + "$1" + Console.RESET + " : ")
               .replaceAll(""" : (\".*\")""", " : " + Console.YELLOW + "$1" + Console.RESET)
-              .replaceAll(""" : (-?\d+.\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
+              .replaceAll(""" : (-?\d+\.\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
               .replaceAll(""" : (-?\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
               .replaceAll(""" : true""", " : " + Console.MAGENTA + "true" + Console.RESET)
               .replaceAll(""" : false""", " : " + Console.MAGENTA + "false" + Console.RESET)
