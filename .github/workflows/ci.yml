@@ -60,7 +60,7 @@ jobs:
       - run: sbt generateCiFiles fix || sbt "generateCiFiles; scalafmtAll; scalafmtSbt" || true
       - name: Push changes
         id: push
-        uses: stefanzweifel/git-auto-commit-action@v4.8.0
+        uses: stefanzweifel/git-auto-commit-action@v4.9.1
         with:
           commit_message: Regenerate files with `sbt generateCiFiles fix`
   post-scala-steward:
@@ -70,7 +70,7 @@ jobs:
     if: github.event_name == 'pull_request' && github.event.pull_request.user.login == 'alejandrohdezma' && contains(github.event.pull_request.body, 'Scala Steward')
     steps:
       - name: Automerge Scala Steward PRs
-        uses: ridedott/merge-me-action@v1.8.138
+        uses: ridedott/merge-me-action@v2.2.9
         with:
           GITHUB_LOGIN: alejandrohdezma
           GITHUB_TOKEN: ${{ secrets.ADMIN_GITHUB_TOKEN }}

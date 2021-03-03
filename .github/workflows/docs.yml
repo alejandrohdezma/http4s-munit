@@ -34,6 +34,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
       - name: Push changes
-        uses: stefanzweifel/git-auto-commit-action@v4.8.0
+        uses: stefanzweifel/git-auto-commit-action@v4.9.1
         with:
           commit_message: "Update documentation [skip ci]"
