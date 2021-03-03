@@ -149,10 +149,9 @@ abstract class HttpFromContainerSuite
     /** Allows to run the same test several times sequencially */
     def repeat(times: Int) = copy(repetitions = times.some)
 
-    /** Allows to run the tests in paralell */
-    def parallel = copy(runInParallel = true.some)
-
-    def parallel(maxParallel: Int) = copy(runInParallel = true.some, maxParallel = maxParallel.some)
+    /** Allows to run the tests in parallel */
+    def parallel(maxParallel: Int = 5 /* scalafix:ok */) = 
+      copy(runInParallel = true.some, maxParallel = maxParallel.some)
 
     /** Force the test to be executed just once */
     def doNotRepeat = copy(repetitions = None)
