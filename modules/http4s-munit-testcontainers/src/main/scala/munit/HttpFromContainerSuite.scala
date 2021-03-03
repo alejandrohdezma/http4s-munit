@@ -21,6 +21,7 @@ import cats.effect.SyncIO
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import fs2.Stream
 import io.circe.parser.parse
 import org.http4s.Request
 import org.http4s.Response
@@ -78,7 +79,13 @@ abstract class HttpFromContainerSuite
 
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
-  case class TestCreator(request: Request[IO], testOptions: TestOptions) {
+  case class TestCreator(
+      request: Request[IO],
+      testOptions: TestOptions,
+      repetitions: Option[Int],
+      runInParallel: Option[Boolean],
+      maxParallel: Option[Int]
+  ) {
 
     /** Mark a test case that is expected to fail */
     def fail: TestCreator = tag(Fail)
@@ -108,7 +115,7 @@ abstract class HttpFromContainerSuite
         withContainers { (container: Containers) =>
           val uri = Uri.resolve(container2Uri(container), request.uri)
 
-          client
+          val run = client
             .run(request.withUri(uri))
             .use { response =>
               IO(body(response)).attempt.flatMap {
@@ -132,9 +139,39 @@ abstract class HttpFromContainerSuite
                 case Left(t) => IO.raiseError(t)
               }
             }
+          runInParallel.fold(sequentialExecution(run)) {
+            case false => sequentialExecution(run)
+            case true  => parallelExecution(run)
+          }
         }
       }
 
+    /** Allows to run the same test several times sequencially */
+    def repeat(times: Int) = copy(repetitions = times.some)
+
+    /** Allows to run the tests in paralell */
+    def parallel = copy(runInParallel = true.some)
+
+    def parallel(maxParallel: Int) = copy(runInParallel = true.some, maxParallel = maxParallel.some)
+
+    /** Force the test to be executed just once */
+    def doNotRepeat = copy(repetitions = None)
+
+    private def sequentialExecution(run: IO[Any]) = Stream
+      .emits(1 to repetitions.getOrElse(1))
+      .covary[IO]
+      .evalMap(_ => run)
+      .compile
+      .drain
+      .unsafeRunSync()
+
+    private def parallelExecution(run: IO[Any]) = Stream
+      .emits(1 to repetitions.getOrElse(1))
+      .covary[IO]
+      .parEvalMapUnordered(maxParallel.getOrElse(1))(_ => run)
+      .compile
+      .drain
+      .unsafeRunSync()
   }
 
   /**
@@ -148,6 +185,6 @@ abstract class HttpFromContainerSuite
    * }}}
    */
   def test(request: IO[Request[IO]]): TestCreator =
-    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty))
+    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty), None, None, None)
 
 }
