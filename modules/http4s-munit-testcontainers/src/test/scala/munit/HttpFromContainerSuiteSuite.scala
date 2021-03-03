@@ -47,7 +47,7 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite {
     .alias("Stress Test")
     .repeat(reps)
     .parallel(10) { response =>
-      numTest.incrementAndGet()
+      numTest.increment()
       val expected = Json.arr(
         Json.obj("id" := 1, "body" := "foo", "published" := true),
         Json.obj("id" := 2, "body" := "bar", "published" := false)
