@@ -16,6 +16,8 @@
 
 package munit
 
+import java.util.concurrent.atomic.AtomicInteger
+
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.Method.GET
@@ -36,6 +38,43 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite {
     )
 
     assertIO(response.as[Json], expected)
+  }
+
+  val reps                   = 1000
+  val numTest: AtomicInteger = new AtomicInteger(0)
+
+  test(GET(uri"posts"))
+    .alias("Stress Test")
+    .repeat(reps)
+    .parallel(10) { response =>
+      numTest.incrementAndGet()
+      val expected = Json.arr(
+        Json.obj("id" := 1, "body" := "foo", "published" := true),
+        Json.obj("id" := 2, "body" := "bar", "published" := false)
+      )
+      assertIO(response.as[Json], expected)
+
+    }
+
+  test("all individual tests in a stress test must be runned") {
+    assertEquals(numTest.get(), reps)
+  }
+
+  val numDoNotRepTest: AtomicInteger = new AtomicInteger(0)
+  test(GET(uri"posts"))
+    .alias("DoNotRepeat Test")
+    .doNotRepeat { response =>
+      numDoNotRepTest.incrementAndGet()
+      val expected = Json.arr(
+        Json.obj("id" := 1, "body" := "foo", "published" := true),
+        Json.obj("id" := 2, "body" := "bar", "published" := false)
+      )
+      assertIO(response.as[Json], expected)
+
+    }
+
+  test("tests with doNotRepeat flag must be just runned once") {
+    assertEquals(numDoNotRepTest.get(), 1)
   }
 
 }

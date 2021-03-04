@@ -21,6 +21,7 @@ import cats.effect.SyncIO
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import fs2.Stream
 import io.circe.parser.parse
 import org.http4s.Request
 import org.http4s.Response
@@ -78,7 +79,12 @@ abstract class HttpFromContainerSuite
 
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
-  case class TestCreator(request: Request[IO], testOptions: TestOptions) {
+  case class TestCreator(
+      request: Request[IO],
+      testOptions: TestOptions,
+      repetitions: Option[Int],
+      maxParallel: Option[Int]
+  ) {
 
     /** Mark a test case that is expected to fail */
     def fail: TestCreator = tag(Fail)
@@ -108,7 +114,7 @@ abstract class HttpFromContainerSuite
         withContainers { (container: Containers) =>
           val uri = Uri.resolve(container2Uri(container), request.uri)
 
-          client
+          val run = client
             .run(request.withUri(uri))
             .use { response =>
               IO(body(response)).attempt.flatMap {
@@ -132,8 +138,29 @@ abstract class HttpFromContainerSuite
                 case Left(t) => IO.raiseError(t)
               }
             }
+
+          Stream
+            .emits(1 to repetitions.getOrElse(1))
+            .covary[IO]
+            .parEvalMapUnordered(maxParallel.getOrElse(1))(_ => run)
+            .compile
+            .drain
+            .unsafeRunSync()
         }
       }
+
+    /** Allows to run the same test several times sequencially */
+    def repeat(times: Int) =
+      if (times < 1) Assertions.fail("times must be > 0")
+      else copy(repetitions = times.some)
+
+    /** Allows to run the tests in parallel */
+    def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
+      if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
+      else copy(maxParallel = maxParallel.some)
+
+    /** Force the test to be executed just once */
+    def doNotRepeat = copy(repetitions = None)
 
   }
 
@@ -148,6 +175,6 @@ abstract class HttpFromContainerSuite
    * }}}
    */
   def test(request: IO[Request[IO]]): TestCreator =
-    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty))
+    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty), None, None)
 
 }
