@@ -18,11 +18,9 @@ package munit
 
 import cats.effect.IO
 import cats.effect.SyncIO
-import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
-import fs2.Stream
-import io.circe.parser.parse
+import org.http4s.ContextRequest
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
@@ -38,129 +36,23 @@ import org.http4s.client.asynchttpclient.AsyncHttpClient
  * @author José Gutiérrez
  */
 abstract class HttpFromContainerSuite
-    extends CatsEffectSuite
+    extends Http4sBaseSuite[Unit]
     with CatsEffectFunFixtures
     with TestContainerForAll
     with LowPrecedenceContainer2Uri {
 
-  /**
-   * Allows altering the name of the generated tests.
-   *
-   * By default it will generate test names like:
-   *
-   * {{{
-   * test(GET(uri"users" / 42))               // GET -> users/42
-   * test(GET(uri"users")).alias("All users") // GET -> users (All users)
-   * }}}
-   */
-  def munitHttp4sNameCreator(request: Request[IO], testOptions: TestOptions): String = {
-    val clue = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
-
-    s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue"
-  }
-
-  def munitHttp4sBodyPrettifier(body: String): String =
-    parse(body)
-      .map(_.spaces2)
-      .fold(
-        _ => body,
-        json =>
-          if (munitAnsiColors)
-            json
-              .replaceAll("""(\"\w+\") : """, Console.CYAN + "$1" + Console.RESET + " : ")
-              .replaceAll(""" : (\".*\")""", " : " + Console.YELLOW + "$1" + Console.RESET)
-              .replaceAll(""" : (-?\d+\.\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
-              .replaceAll(""" : (-?\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
-              .replaceAll(""" : true""", " : " + Console.MAGENTA + "true" + Console.RESET)
-              .replaceAll(""" : false""", " : " + Console.MAGENTA + "false" + Console.RESET)
-              .replaceAll(""" : null""", " : " + Console.MAGENTA + "null" + Console.RESET)
-          else json
-      )
-
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
-  case class TestCreator(
-      request: Request[IO],
-      testOptions: TestOptions,
-      repetitions: Option[Int],
-      maxParallel: Option[Int]
-  ) {
-
-    /** Mark a test case that is expected to fail */
-    def fail: TestCreator = tag(Fail)
-
-    /**
-     * Mark a test case that has a tendency to non-deterministically fail for known or unknown reasons.
-     *
-     * By default, flaky tests fail like basic tests unless the `MUNIT_FLAKY_OK` environment variable is set to `true`.
-     * You can override [[munitFlakyOK]] to customize when it's OK for flaky tests to fail.
-     */
-    def flaky: TestCreator = tag(Flaky)
-
-    /** Skips an individual test case in a test suite */
-    def ignore: TestCreator = tag(Ignore)
-
-    /** When running munit, run only a single test */
-    def only: TestCreator = tag(Only)
-
-    /** Add a tag to this test */
-    def tag(t: Tag): TestCreator = copy(testOptions = testOptions.tag(t))
-
-    /** Adds an alias to this test (the test name will be suffixed with this alias when printed) */
-    def alias(s: String): TestCreator = copy(testOptions = testOptions.withName(s))
+  implicit class TestCreatorOps(private val testCreator: TestCreator) {
 
     def apply(body: Response[IO] => Any)(implicit loc: munit.Location, container2Uri: Containers => Uri): Unit =
-      httpClient.test(testOptions.withName(munitHttp4sNameCreator(request, testOptions)).withLocation(loc)) { client =>
+      testCreator.execute(httpClient.test, body) { client: Client[IO] =>
         withContainers { (container: Containers) =>
-          val uri = Uri.resolve(container2Uri(container), request.uri)
+          val uri = Uri.resolve(container2Uri(container), testCreator.request.req.uri)
 
-          val run = client
-            .run(request.withUri(uri))
-            .use { response =>
-              IO(body(response)).attempt.flatMap {
-                case Right(io: IO[Any]) => io
-                case Right(a)           => IO.pure(a)
-                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
-                    t.getMessage().split("Clues \\{") match {
-                      case Array(p1, p2) =>
-                        val bodyClue =
-                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
-                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
-                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
-                      case _ => IO.raiseError(t)
-                    }
-                  }
-                case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
-                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
-                  }
-                case Left(t) => IO.raiseError(t)
-              }
-            }
-
-          Stream
-            .emits(1 to repetitions.getOrElse(1))
-            .covary[IO]
-            .parEvalMapUnordered(maxParallel.getOrElse(1))(_ => run)
-            .compile
-            .drain
-            .unsafeRunSync()
+          client.run(testCreator.request.req.withUri(uri))
         }
       }
-
-    /** Allows to run the same test several times sequencially */
-    def repeat(times: Int) =
-      if (times < 1) Assertions.fail("times must be > 0")
-      else copy(repetitions = times.some)
-
-    /** Allows to run the tests in parallel */
-    def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
-      if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
-      else copy(maxParallel = maxParallel.some)
-
-    /** Force the test to be executed just once */
-    def doNotRepeat = copy(repetitions = None)
 
   }
 
@@ -174,7 +66,7 @@ abstract class HttpFromContainerSuite
    * }
    * }}}
    */
-  def test(request: IO[Request[IO]]): TestCreator =
-    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty), None, None)
+  def test(request: IO[Request[IO]]) =
+    TestCreator(ContextRequest((), request.unsafeRunSync()), TestOptions(""), None, None)
 
 }
