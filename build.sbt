@@ -26,5 +26,5 @@ lazy val `http4s-munit` = module
 
 lazy val `http4s-munit-testcontainers` = module
   .dependsOn(`http4s-munit`)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.20")
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.3")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.20" % Test)
