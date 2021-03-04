@@ -18,12 +18,14 @@ package munit
 
 import cats.Show
 import cats.effect.IO
-import cats.syntax.show._
+import cats.effect.Resource
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
+import org.http4s.ContextRequest
 import org.http4s.Request
-import org.http4s.Uri
+import org.http4s.Response
+import org.http4s.syntax.all._
 
 /**
  * Base class for suites testing `AuthedRoutes`.
@@ -31,23 +33,10 @@ import org.http4s.Uri
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A], AuthedRoutes[A, IO]] {
+abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sBaseSuite[A] {
 
-  /**
-   * Allows altering the name of the generated tests.
-   *
-   * By default it will generate test names like:
-   *
-   * {{{
-   * test(GET(uri"users" / 42) -> "user1")               // GET -> users/42 as user1
-   * test(GET(uri"users") -> "user2").alias("All users") // GET -> users (All users) as user2
-   * }}}
-   */
-  override def munitHttp4sNameCreator(request: AuthedRequest[IO, A], testOptions: TestOptions): String = {
-    val alias = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
-
-    s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$alias as ${request.context.show}"
-  }
+  /** The HTTP routes being tested */
+  val routes: AuthedRoutes[A, IO]
 
   implicit class Request2AuthedRequest(request: IO[Request[IO]]) {
 
@@ -64,5 +53,26 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
     def ->(a: A): IO[AuthedRequest[IO, A]] = context(a)
 
   }
+
+  implicit class TestCreatorOps(private val testCreator: TestCreator) {
+
+    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit = testCreator.execute(test, body) {
+      Resource.liftF(routes.orNotFound.run(testCreator.request))
+    }
+
+  }
+
+  /**
+   * Declares a test for the provided request.
+   *
+   * @example
+   * {{{
+   * test(GET(uri"users" / 42).as("user-1")) { response =>
+   *    // test body
+   * }
+   * }}}
+   */
+  def test(request: IO[ContextRequest[IO, A]]): TestCreator =
+    TestCreator(request.unsafeRunSync(), TestOptions(""), None, None)
 
 }
