@@ -1,48 +1,76 @@
-/*
- * Copyright 2020-2021 Alejandro Hernández <https://github.com/alejandrohdezma>
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package munit
 
-import cats.data.Kleisli
-import cats.data.OptionT
+import cats.Show
 import cats.effect.IO
+import cats.effect.Resource
+import cats.syntax.all._
 
+import fs2.Stream
+import io.circe.parser.parse
+import org.http4s.ContextRequest
 import org.http4s.Response
-import org.http4s.syntax.all._
+import org.http4s.Uri
 
-/**
- * The base class for all http4s suites.
- *
- * @author Alejandro Hernández
- * @author José Gutiérrez
- *
- * @param Req The request type (`org.http4s.Request` or `org.http4s.AuthedRequest`)
- * @param Routes The routes type (`org.http4s.HttpRoutes` or `org.http4s.AuthedRoutes`)
- */
-abstract class Http4sSuite[Req, Routes <: Kleisli[OptionT[IO, *], Req, Response[IO]]] extends CatsEffectSuite {
-
-  /** The HTTP routes being tested */
-  val routes: Routes
+abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
   /**
    * Allows altering the name of the generated tests.
+   *
+   * It will generate test names like:
+   *
+   * {{{
+   * test(GET(uri"users" / 42))               // GET -> users/42
+   * test(GET(uri"users")).alias("All users") // GET -> users (All users)
+   * }}}
+   *
+   * @param request the test's request
+   * @param testOptions the options for the current test
+   * @return the test's name
    */
-  def munitHttp4sNameCreator(request: Req, testOptions: TestOptions): String
+  def munitHttp4sNameCreator(request: ContextRequest[IO, A], testOptions: TestOptions): String = {
+    val clue = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
 
-  case class TestCreator(request: Req, testOptions: TestOptions) {
+    val context = request.context match {
+      case _: Unit => None
+      case context => context.show.some.filterNot(_.isEmpty())
+    }
+
+    s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}"
+  }
+
+  /**
+   * Allows pretiffing the response's body before outputting it to logs.
+   *
+   * By default it will try to parse it as JSON and apply a code highlight
+   * if `munitAnsiColors` is `true`.
+   *
+   * @param body the response's body to prettify
+   * @return the prettified version of the response's body
+   */
+  def munitHttp4sBodyPrettifier(body: String): String =
+    parse(body)
+      .map(_.spaces2)
+      .fold(
+        _ => body,
+        json =>
+          if (munitAnsiColors)
+            json
+              .replaceAll("""(\"\w+\") : """, Console.CYAN + "$1" + Console.RESET + " : ")
+              .replaceAll(""" : (\".*\")""", " : " + Console.YELLOW + "$1" + Console.RESET)
+              .replaceAll(""" : (-?\d+\.\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
+              .replaceAll(""" : (-?\d+)""", " : " + Console.GREEN + "$1" + Console.RESET)
+              .replaceAll(""" : true""", " : " + Console.MAGENTA + "true" + Console.RESET)
+              .replaceAll(""" : false""", " : " + Console.MAGENTA + "false" + Console.RESET)
+              .replaceAll(""" : null""", " : " + Console.MAGENTA + "null" + Console.RESET)
+          else json
+      )
+
+  case class TestCreator(
+      request: ContextRequest[IO, A],
+      testOptions: TestOptions = TestOptions(""),
+      repetitions: Option[Int] = None,
+      maxParallel: Option[Int] = None
+  ) {
 
     /** Mark a test case that is expected to fail */
     def fail: TestCreator = tag(Fail)
@@ -67,27 +95,55 @@ abstract class Http4sSuite[Req, Routes <: Kleisli[OptionT[IO, *], Req, Response[
     /** Adds an alias to this test (the test name will be suffixed with this alias when printed) */
     def alias(s: String): TestCreator = copy(testOptions = testOptions.withName(s))
 
-    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
-      test(testOptions.withName(munitHttp4sNameCreator(request, testOptions)).withLocation(loc)) {
-        routes.orNotFound.run(request).map(body).flatMap {
-          case io: IO[Any] => io
-          case a           => IO(a)
-        }
+    /** Allows to run the same test several times sequencially */
+    def repeat(times: Int) =
+      if (times < 1) Assertions.fail("times must be > 0")
+      else copy(repetitions = times.some)
+
+    /** Allows to run the tests in parallel */
+    def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
+      if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
+      else copy(maxParallel = maxParallel.some)
+
+    /** Force the test to be executed just once */
+    def doNotRepeat = copy(repetitions = None)
+
+    def execute[C](testCreator: TestOptions => (C => Any) => Unit, body: Response[IO] => Any)(
+        executor: C => Resource[IO, Response[IO]]
+    )(implicit loc: Location): Unit =
+      testCreator(testOptions.withName(munitHttp4sNameCreator(request, testOptions)).withLocation(loc)) { c: C =>
+        Stream
+          .emits(1 to repetitions.getOrElse(1))
+          .covary[IO]
+          .parEvalMapUnordered(maxParallel.getOrElse(1)) { _ =>
+            executor(c).use { response =>
+              IO(body(response)).attempt.flatMap {
+                case Right(io: IO[Any]) => io
+                case Right(a)           => IO.pure(a)
+                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
+                    t.getMessage().split("Clues \\{") match {
+                      case Array(p1, p2) =>
+                        val bodyClue =
+                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
+                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                      case _ => IO.raiseError(t)
+                    }
+                  }
+                case Left(t: FailExceptionLike[_]) =>
+                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
+                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                  }
+                case Left(t) => IO.raiseError(t)
+              }
+            }
+          }
+          .compile
+          .drain
+          .unsafeRunSync()
       }
 
   }
-
-  /**
-   * Declares a test for the provided request.
-   *
-   * @example
-   * {{{
-   * test(GET(uri"users" / 42)) { response =>
-   *    // test body
-   * }
-   * }}}
-   */
-  def test(request: IO[Req]): TestCreator =
-    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty))
 
 }

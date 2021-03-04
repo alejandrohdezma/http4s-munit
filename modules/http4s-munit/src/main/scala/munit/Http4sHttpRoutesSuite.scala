@@ -17,10 +17,13 @@
 package munit
 
 import cats.effect.IO
+import cats.effect.Resource
 
+import org.http4s.ContextRequest
 import org.http4s.HttpRoutes
 import org.http4s.Request
-import org.http4s.Uri
+import org.http4s.Response
+import org.http4s.syntax.all._
 
 /**
  * Base class for suites testing `HttpRoutes`.
@@ -28,22 +31,30 @@ import org.http4s.Uri
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO], HttpRoutes[IO]] {
+abstract class Http4sHttpRoutesSuite extends Http4sSuite[Unit] {
+
+  /** The HTTP routes being tested */
+  val routes: HttpRoutes[IO]
+
+  implicit class TestCreatorOps(private val testCreator: TestCreator) {
+
+    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
+      testCreator.execute[Unit](a => b => test(a)(b(()))(loc), body) { _ =>
+        Resource.liftF(routes.orNotFound.run(testCreator.request.req))
+      }
+    ()
+  }
 
   /**
-   * Allows altering the name of the generated tests.
+   * Declares a test for the provided request.
    *
-   * By default it will generate test names like:
-   *
+   * @example
    * {{{
-   * test(GET(uri"users" / 42))               // GET -> users/42
-   * test(GET(uri"users")).alias("All users") // GET -> users (All users)
+   * test(GET(uri"users" / 42)) { response =>
+   *    // test body
+   * }
    * }}}
    */
-  override def munitHttp4sNameCreator(request: Request[IO], testOptions: TestOptions): String = {
-    val alias = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
-
-    s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$alias"
-  }
+  def test(request: IO[Request[IO]]): TestCreator = TestCreator(ContextRequest((), request.unsafeRunSync()))
 
 }
