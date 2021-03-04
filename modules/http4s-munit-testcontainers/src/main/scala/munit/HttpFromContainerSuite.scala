@@ -23,7 +23,6 @@ import cats.syntax.all._
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 import fs2.Stream
 import io.circe.parser.parse
-import munit.Assertions
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
