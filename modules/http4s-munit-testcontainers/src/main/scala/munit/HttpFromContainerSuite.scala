@@ -83,7 +83,6 @@ abstract class HttpFromContainerSuite
       request: Request[IO],
       testOptions: TestOptions,
       repetitions: Option[Int],
-      runInParallel: Option[Boolean],
       maxParallel: Option[Int]
   ) {
 
@@ -139,10 +138,14 @@ abstract class HttpFromContainerSuite
                 case Left(t) => IO.raiseError(t)
               }
             }
-          runInParallel.fold(sequentialExecution(run)) {
-            case false => sequentialExecution(run)
-            case true  => parallelExecution(run)
-          }
+
+          Stream
+            .emits(1 to repetitions.getOrElse(1))
+            .covary[IO]
+            .parEvalMapUnordered(maxParallel.getOrElse(1))(_ => run)
+            .compile
+            .drain
+            .unsafeRunSync()
         }
       }
 
@@ -156,21 +159,6 @@ abstract class HttpFromContainerSuite
     /** Force the test to be executed just once */
     def doNotRepeat = copy(repetitions = None)
 
-    private def sequentialExecution(run: IO[Any]) = Stream
-      .emits(1 to repetitions.getOrElse(1))
-      .covary[IO]
-      .evalMap(_ => run)
-      .compile
-      .drain
-      .unsafeRunSync()
-
-    private def parallelExecution(run: IO[Any]) = Stream
-      .emits(1 to repetitions.getOrElse(1))
-      .covary[IO]
-      .parEvalMapUnordered(maxParallel.getOrElse(1))(_ => run)
-      .compile
-      .drain
-      .unsafeRunSync()
   }
 
   /**
@@ -184,6 +172,6 @@ abstract class HttpFromContainerSuite
    * }}}
    */
   def test(request: IO[Request[IO]]): TestCreator =
-    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty), None, None, None)
+    TestCreator(request.unsafeRunSync(), new TestOptions("", Set.empty, Location.empty), None, None)
 
 }
