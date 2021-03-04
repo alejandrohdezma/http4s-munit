@@ -31,7 +31,7 @@ import org.http4s.syntax.all._
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class Http4sHttpRoutesSuite extends Http4sBaseSuite[Unit] {
+abstract class Http4sHttpRoutesSuite extends Http4sSuite[Unit] {
 
   /** The HTTP routes being tested */
   val routes: HttpRoutes[IO]

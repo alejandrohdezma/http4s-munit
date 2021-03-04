@@ -32,7 +32,7 @@ import org.http4s.client.asynchttpclient.AsyncHttpClient
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class HttpSuite extends Http4sBaseSuite[Unit] with CatsEffectFunFixtures {
+abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
 
   /**
    * The base URI for all tests. This URI will prepend the one used in each

@@ -33,7 +33,7 @@ import org.http4s.syntax.all._
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sBaseSuite[A] {
+abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
 
   /** The HTTP routes being tested */
   val routes: AuthedRoutes[A, IO]

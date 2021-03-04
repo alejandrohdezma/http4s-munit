@@ -11,7 +11,7 @@ import org.http4s.ContextRequest
 import org.http4s.Response
 import org.http4s.Uri
 
-abstract class Http4sBaseSuite[A: Show] extends CatsEffectSuite {
+abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
   /**
    * Allows altering the name of the generated tests.

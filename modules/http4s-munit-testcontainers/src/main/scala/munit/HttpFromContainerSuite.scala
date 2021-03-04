@@ -36,7 +36,7 @@ import org.http4s.client.asynchttpclient.AsyncHttpClient
  * @author José Gutiérrez
  */
 abstract class HttpFromContainerSuite
-    extends Http4sBaseSuite[Unit]
+    extends Http4sSuite[Unit]
     with CatsEffectFunFixtures
     with TestContainerForAll
     with LowPrecedenceContainer2Uri {
