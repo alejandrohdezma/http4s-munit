@@ -23,6 +23,7 @@ import cats.syntax.all._
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 import fs2.Stream
 import io.circe.parser.parse
+import munit.Assertions
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
@@ -150,11 +151,14 @@ abstract class HttpFromContainerSuite
       }
 
     /** Allows to run the same test several times sequencially */
-    def repeat(times: Int) = copy(repetitions = times.some)
+    def repeat(times: Int) =
+      if (times < 1) Assertions.fail("times must be > 0")
+      else copy(repetitions = times.some)
 
     /** Allows to run the tests in parallel */
-    def parallel(maxParallel: Int = 5 /* scalafix:ok */) = 
-      copy(runInParallel = true.some, maxParallel = maxParallel.some)
+    def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
+      if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
+      else copy(maxParallel = maxParallel.some)
 
     /** Force the test to be executed just once */
     def doNotRepeat = copy(repetitions = None)
