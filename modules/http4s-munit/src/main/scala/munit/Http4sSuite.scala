@@ -67,9 +67,9 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
   case class TestCreator(
       request: ContextRequest[IO, A],
-      testOptions: TestOptions,
-      repetitions: Option[Int],
-      maxParallel: Option[Int]
+      testOptions: TestOptions = TestOptions(""),
+      repetitions: Option[Int] = None,
+      maxParallel: Option[Int] = None
   ) {
 
     /** Mark a test case that is expected to fail */

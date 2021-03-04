@@ -66,7 +66,6 @@ abstract class HttpFromContainerSuite
    * }
    * }}}
    */
-  def test(request: IO[Request[IO]]) =
-    TestCreator(ContextRequest((), request.unsafeRunSync()), TestOptions(""), None, None)
+  def test(request: IO[Request[IO]]) = TestCreator(ContextRequest((), request.unsafeRunSync()))
 
 }

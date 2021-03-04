@@ -54,7 +54,6 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Unit] {
    * }
    * }}}
    */
-  def test(request: IO[Request[IO]]): TestCreator =
-    TestCreator(ContextRequest((), request.unsafeRunSync()), TestOptions(""), None, None)
+  def test(request: IO[Request[IO]]): TestCreator = TestCreator(ContextRequest((), request.unsafeRunSync()))
 
 }
