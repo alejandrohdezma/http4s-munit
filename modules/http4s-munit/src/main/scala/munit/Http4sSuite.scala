@@ -32,7 +32,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
     val context = request.context match {
       case _: Unit => None
-      case context => context.show.some.filterNot(_.isBlank())
+      case context => context.show.some.filterNot(_.isEmpty())
     }
 
     s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}"
@@ -107,10 +107,6 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
     /** Force the test to be executed just once */
     def doNotRepeat = copy(repetitions = None)
-
-    def execute(testCreator: TestOptions => (=> Any) => Unit, body: Response[IO] => Any)(
-        executor: => Resource[IO, Response[IO]]
-    )(implicit loc: Location): Unit = execute[Unit](options => f => testCreator(options)(f(())), body)(_ => executor)
 
     def execute[C](testCreator: TestOptions => (C => Any) => Unit, body: Response[IO] => Any)(
         executor: C => Resource[IO, Response[IO]]

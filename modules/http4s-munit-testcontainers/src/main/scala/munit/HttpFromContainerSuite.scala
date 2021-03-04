@@ -46,7 +46,7 @@ abstract class HttpFromContainerSuite
   implicit class TestCreatorOps(private val testCreator: TestCreator) {
 
     def apply(body: Response[IO] => Any)(implicit loc: munit.Location, container2Uri: Containers => Uri): Unit =
-      testCreator.execute(httpClient.test, body) { client: Client[IO] =>
+      testCreator.execute[Client[IO]](a => b => httpClient.test(a)(b)(loc), body) { client: Client[IO] =>
         withContainers { (container: Containers) =>
           val uri = Uri.resolve(container2Uri(container), testCreator.request.req.uri)
 

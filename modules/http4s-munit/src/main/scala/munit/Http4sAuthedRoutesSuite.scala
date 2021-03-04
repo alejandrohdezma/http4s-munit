@@ -56,9 +56,10 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
 
   implicit class TestCreatorOps(private val testCreator: TestCreator) {
 
-    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit = testCreator.execute(test, body) {
-      Resource.liftF(routes.orNotFound.run(testCreator.request))
-    }
+    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
+      testCreator.execute[Unit](a => b => test(a)(b(()))(loc), body) { _ =>
+        Resource.liftF(routes.orNotFound.run(testCreator.request))
+      }
 
   }
 

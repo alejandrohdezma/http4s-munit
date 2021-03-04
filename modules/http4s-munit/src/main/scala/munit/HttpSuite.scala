@@ -45,7 +45,7 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
   implicit class TestCreatorOps(private val testCreator: TestCreator) {
 
     def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
-      testCreator.execute(httpClient.test, body) { client: Client[IO] =>
+      testCreator.execute[Client[IO]](a => b => httpClient.test(a)(b)(loc), body) { client: Client[IO] =>
         val uri = Uri.resolve(baseUri, testCreator.request.req.uri)
 
         client.run(testCreator.request.req.withUri(uri))
