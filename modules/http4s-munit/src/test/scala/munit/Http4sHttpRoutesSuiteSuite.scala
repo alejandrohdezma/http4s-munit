@@ -31,8 +31,13 @@ class Http4sHttpRoutesSuiteSuite extends Http4sHttpRoutesSuite {
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
   }
 
-  override def http4sMUnitNameCreator(request: ContextRequest[IO, Unit], testOptions: TestOptions): String =
-    "Test - " + super.http4sMUnitNameCreator(request, testOptions)
+  override def munitHttp4sNameCreator(
+      request: ContextRequest[IO, Unit],
+      testOptions: TestOptions,
+      repetitions: Option[Int],
+      maxParallel: Option[Int]
+  ): String =
+    "Test - " + super.munitHttp4sNameCreator(request, testOptions, repetitions, maxParallel)
 
   test(GET(uri"hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")

@@ -34,7 +34,12 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
    * @param testOptions the options for the current test
    * @return the test's name
    */
-  def http4sMUnitNameCreator(request: ContextRequest[IO, A], testOptions: TestOptions): String = {
+  def munitHttp4sNameCreator(
+      request: ContextRequest[IO, A],
+      testOptions: TestOptions,
+      repetitions: Option[Int],
+      maxParallel: Option[Int]
+  ): String = {
     val clue = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
 
     val context = request.context match {
@@ -42,7 +47,12 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
       case context => context.show.some.filterNot(_.isEmpty())
     }
 
-    s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}"
+    val reps = repetitions match {
+      case Some(rep) if rep > 1 =>
+        s" - executed $rep times" + maxParallel.fold("")(paral => s" with $paral in parallel")
+      case _ => ""
+    }
+    s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}$reps"
   }
 
   /**
@@ -125,9 +135,9 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
       http4sMUnitFunFixture.test(testOptions.withName(http4sMUnitNameCreator(request, testOptions)).withLocation(loc)) {
         client =>
           Stream
-            .emits(1 to repetitions.getOrElse(1))
+            .emits(1 to repetitions.getOrElse(config.values.repetitions.getOrElse(1)))
             .covary[IO]
-            .parEvalMapUnordered(maxParallel.getOrElse(1)) { _ =>
+            .parEvalMapUnordered(maxParallel.getOrElse(config.values.maxConcurrent.getOrElse(1))) { _ =>
               client(request).use { response =>
                 IO(body(response)).attempt.flatMap {
                   case Right(io: IO[Any]) => io
