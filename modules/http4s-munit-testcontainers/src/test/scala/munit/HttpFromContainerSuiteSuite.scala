@@ -63,7 +63,7 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite {
   val numDoNotRepTest: AtomicInteger = new AtomicInteger(0)
   test(GET(uri"posts"))
     .alias("DoNotRepeat Test")
-    .doNotRepeat { response =>
+    .repeat(1) { response =>
       numDoNotRepTest.incrementAndGet()
       val expected = Json.arr(
         Json.obj("id" := 1, "body" := "foo", "published" := true),
