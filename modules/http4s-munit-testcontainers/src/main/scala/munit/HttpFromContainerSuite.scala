@@ -17,7 +17,7 @@
 package munit
 
 import com.dimafeng.testcontainers.SingleContainer
-import com.dimafeng.testcontainers.munit.TestContainerForAll
+import com.dimafeng.testcontainers.munit.TestContainersSuite
 import org.http4s.Uri
 
 /**
@@ -28,7 +28,7 @@ import org.http4s.Uri
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class HttpFromContainerSuite extends HttpSuite with TestContainerForAll {
+abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite {
 
   override def baseUri(): Uri = withContainers { (containers: Containers) =>
     http4sMUnitContainerUriExtractors.view
