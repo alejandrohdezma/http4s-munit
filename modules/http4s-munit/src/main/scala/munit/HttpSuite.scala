@@ -38,7 +38,7 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
    * The base URI for all tests. This URI will prepend the one used in each
    * test's request.
    */
-  val baseUri: Uri
+  def baseUri(): Uri
 
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
@@ -46,7 +46,7 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
 
     def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
       testCreator.execute[Client[IO]](a => b => httpClient.test(a)(b)(loc), body) { client: Client[IO] =>
-        val uri = Uri.resolve(baseUri, testCreator.request.req.uri)
+        val uri = Uri.resolve(baseUri(), testCreator.request.req.uri)
 
         client.run(testCreator.request.req.withUri(uri))
       }
