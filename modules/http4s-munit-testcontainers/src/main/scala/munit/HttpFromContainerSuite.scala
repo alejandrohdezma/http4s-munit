@@ -16,17 +16,9 @@
 
 package munit
 
-import cats.effect.IO
-import cats.effect.SyncIO
-
 import com.dimafeng.testcontainers.SingleContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
-import org.http4s.ContextRequest
-import org.http4s.Request
-import org.http4s.Response
 import org.http4s.Uri
-import org.http4s.client.Client
-import org.http4s.client.asynchttpclient.AsyncHttpClient
 
 /**
  * Base class for suites testing HTTP servers running in testcontainers.
@@ -36,7 +28,14 @@ import org.http4s.client.asynchttpclient.AsyncHttpClient
  * @author Alejandro Hernández
  * @author José Gutiérrez
  */
-abstract class HttpFromContainerSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures with TestContainerForAll {
+abstract class HttpFromContainerSuite extends HttpSuite with TestContainerForAll {
+
+  override def baseUri(): Uri = withContainers { (containers: Containers) =>
+    http4sMUnitContainerUriExtractors.view
+      .map(_(containers))
+      .collectFirst { case Some(uri) => uri }
+      .getOrElse(fail("Unable to get container's URI"))
+  }
 
   final class ContainerUriExtractor(fn: PartialFunction[Containers, Uri]) extends Function1[Containers, Option[Uri]] {
     def apply(containers: Containers): Option[Uri] = fn.lift(containers)
@@ -64,36 +63,5 @@ abstract class HttpFromContainerSuite extends Http4sSuite[Unit] with CatsEffectF
         Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head)}")
     })
   )
-
-  def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
-
-  implicit class TestCreatorOps(private val testCreator: TestCreator) {
-
-    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
-      testCreator.execute[Client[IO]](a => b => httpClient.test(a)(b)(loc), body) { client: Client[IO] =>
-        withContainers { (containers: Containers) =>
-          val uri = http4sMUnitContainerUriExtractors.view
-            .map(_(containers))
-            .collectFirst { case Some(uri) => uri }
-            .getOrElse(fail("Unable to get container's URI"))
-            .resolve(testCreator.request.req.uri)
-
-          client.run(testCreator.request.req.withUri(uri))
-        }
-      }
-
-  }
-
-  /**
-   * Declares a test for the provided request.
-   *
-   * @example
-   * {{{
-   * test(GET(uri"users" / 42)) { response =>
-   *    // test body
-   * }
-   * }}}
-   */
-  def test(request: IO[Request[IO]]) = TestCreator(ContextRequest((), request.unsafeRunSync()))
 
 }
