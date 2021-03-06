@@ -21,9 +21,48 @@ import com.dimafeng.testcontainers.munit.TestContainersSuite
 import org.http4s.Uri
 
 /**
- * Base class for suites testing HTTP servers running in testcontainers.
+ * Base class for suites testing HTTP servers running in docker containers using testcontainers.
  *
- * The container must expose an HTTP server in the 8080 port.
+ * To use this class you'll need to select also one of the two testcontainers specific suites:
+ * `TestContainersForAll` or `TestContainersForEach`. Also you'll need to override the
+ * `val containerDef: ContainerDef` definition with your container. Lastly you'll need to
+ * ensure your container's URI is obtainable either by using the default extractor (which just uses
+ * `localhost:first-exposed-port`) or providing an specific one for your container by overriding
+ * the `http4sMUnitContainerUriExtractors` list.
+ *
+ * @example
+ * {{{
+ * import com.dimafeng.testcontainers.ContainerDef
+ * import com.dimafeng.testcontainers.GenericContainer
+ * import com.dimafeng.testcontainers.munit.TestContainerForAll
+ *
+ * import org.http4s.Method.GET
+ * import org.http4s.client.dsl.io._
+ * import org.http4s.syntax.all._
+ *
+ * import org.testcontainers.containers.wait.strategy.Wait
+ *
+ * class HttpFromContainerSuiteSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+ *
+ *  override val containerDef = new ContainerDef {
+ *
+ *    override type Container = GenericContainer
+ *
+ *    protected def createContainer(): GenericContainer = GenericContainer(
+ *      dockerImage = "briceburg/ping-pong",
+ *      exposedPorts = Seq(80)
+ *    )
+ *
+ *  }
+ *
+ *  test(GET(uri"ping")) { response =>
+ *    assertEquals(response.status.code, 200)
+ *
+ *    assertIO(response.as[String], "pong")
+ *  }
+ *
+ * }
+ * }}}
  *
  * @author Alejandro Hernández
  * @author José Gutiérrez

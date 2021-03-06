@@ -11,6 +11,12 @@ import org.http4s.ContextRequest
 import org.http4s.Response
 import org.http4s.Uri
 
+/**
+ * Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
+ *
+ * @author Alejandro Hernández
+ * @author José Gutiérrez
+ */
 abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
   /**

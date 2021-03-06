@@ -27,7 +27,35 @@ import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 
 /**
- * Base class for suites testing HTTP servers.
+ * Base class for suites testing remote HTTP servers.
+ *
+ * To use this class you'll need to provide the `Uri` of the remote container by
+ * overriding `baseUri`.
+ *
+ * @example
+ * {{{
+ * import io.circe.Json
+ *
+ * import org.http4s.Method.GET
+ * import org.http4s.Uri
+ * import org.http4s.circe._
+ * import org.http4s.client.dsl.io._
+ * import org.http4s.syntax.all._
+ *
+ * class HttpSuiteSuite extends munit.HttpSuite {
+ *
+ *  override def baseUri(): Uri = uri"https://api.github.com"
+ *
+ *  test(GET(uri"users/gutiory")) { response =>
+ *    assertEquals(response.status.code, 200)
+ *
+ *    val result = response.as[Json].map(_.hcursor.get[String]("login"))
+ *
+ *    assertIO(result, Right("gutiory"))
+ *  }
+ *
+ * }
+ * }}}
  *
  * @author Alejandro Hernández
  * @author José Gutiérrez
@@ -40,6 +68,13 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
    */
   def baseUri(): Uri
 
+  /**
+   * This client is used under the hood to execute the requests.
+   *
+   * Override it if you want to use a different implementation or if you
+   * want to initalize in any way out of the default one (different timeouts,
+   * SSL certificates...).
+   */
   def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
   implicit class TestCreatorOps(private val testCreator: TestCreator) {
@@ -54,11 +89,26 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
   }
 
   /**
-   * Declares a test for the provided request.
+   * Declares a test for the provided request. That request will be executed using the
+   * provided client in `httpClient` to the server indicated in `baseUri`.
    *
    * @example
    * {{{
    * test(GET(uri"users" / 42)) { response =>
+   *    // test body
+   * }
+   * }}}
+   *
+   * @example
+   * {{{
+   * test(POST(json, uri"users")).alias("Create a new user") { response =>
+   *    // test body
+   * }
+   * }}}
+   *
+   * @example
+   * {{{
+   * test(GET(uri"users" / 42)).flaky { response =>
    *    // test body
    * }
    * }}}
