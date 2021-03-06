@@ -33,7 +33,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
    * @param testOptions the options for the current test
    * @return the test's name
    */
-  def munitHttp4sNameCreator(request: ContextRequest[IO, A], testOptions: TestOptions): String = {
+  def http4sMUnitNameCreator(request: ContextRequest[IO, A], testOptions: TestOptions): String = {
     val clue = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
 
     val context = request.context match {
@@ -53,7 +53,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
    * @param body the response's body to prettify
    * @return the prettified version of the response's body
    */
-  def munitHttp4sBodyPrettifier(body: String): String =
+  def http4sMUnitBodyPrettifier(body: String): String =
     parse(body)
       .map(_.spaces2)
       .fold(
@@ -71,7 +71,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
           else json
       )
 
-  case class TestCreator(
+  case class Http4sMUnitTestCreator(
       request: ContextRequest[IO, A],
       testOptions: TestOptions = TestOptions(""),
       repetitions: Option[Int] = None,
@@ -79,7 +79,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
   ) {
 
     /** Mark a test case that is expected to fail */
-    def fail: TestCreator = tag(Fail)
+    def fail: Http4sMUnitTestCreator = tag(Fail)
 
     /**
      * Mark a test case that has a tendency to non-deterministically fail for known or unknown reasons.
@@ -87,19 +87,19 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
      * By default, flaky tests fail like basic tests unless the `MUNIT_FLAKY_OK` environment variable is set to `true`.
      * You can override [[munitFlakyOK]] to customize when it's OK for flaky tests to fail.
      */
-    def flaky: TestCreator = tag(Flaky)
+    def flaky: Http4sMUnitTestCreator = tag(Flaky)
 
     /** Skips an individual test case in a test suite */
-    def ignore: TestCreator = tag(Ignore)
+    def ignore: Http4sMUnitTestCreator = tag(Ignore)
 
     /** When running munit, run only a single test */
-    def only: TestCreator = tag(Only)
+    def only: Http4sMUnitTestCreator = tag(Only)
 
     /** Add a tag to this test */
-    def tag(t: Tag): TestCreator = copy(testOptions = testOptions.tag(t))
+    def tag(t: Tag): Http4sMUnitTestCreator = copy(testOptions = testOptions.tag(t))
 
     /** Adds an alias to this test (the test name will be suffixed with this alias when printed) */
-    def alias(s: String): TestCreator = copy(testOptions = testOptions.withName(s))
+    def alias(s: String): Http4sMUnitTestCreator = copy(testOptions = testOptions.withName(s))
 
     /** Allows to run the same test several times sequencially */
     def repeat(times: Int) =
@@ -117,7 +117,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     def execute[C](testCreator: TestOptions => (C => Any) => Unit, body: Response[IO] => Any)(
         executor: C => Resource[IO, Response[IO]]
     )(implicit loc: Location): Unit =
-      testCreator(testOptions.withName(munitHttp4sNameCreator(request, testOptions)).withLocation(loc)) { c: C =>
+      testCreator(testOptions.withName(http4sMUnitNameCreator(request, testOptions)).withLocation(loc)) { c: C =>
         Stream
           .emits(1 to repetitions.getOrElse(1))
           .covary[IO]
@@ -127,7 +127,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
                 case Right(io: IO[Any]) => io
                 case Right(a)           => IO.pure(a)
                 case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
+                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
                     t.getMessage().split("Clues \\{") match {
                       case Array(p1, p2) =>
                         val bodyClue =
@@ -138,7 +138,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
                     }
                   }
                 case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string.map(munitHttp4sBodyPrettifier(_)) >>= { body =>
+                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
                     IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
                   }
                 case Left(t) => IO.raiseError(t)
