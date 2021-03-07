@@ -19,6 +19,7 @@ package munit
 import cats.Show
 import cats.effect.IO
 import cats.effect.Resource
+import cats.effect.SyncIO
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
@@ -80,14 +81,8 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
 
   }
 
-  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
-
-    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
-      testCreator.execute[Unit](a => b => test(a)(b(()))(loc), body) { _ =>
-        Resource.liftF(routes.orNotFound.run(testCreator.request))
-      }
-
-  }
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
+    SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
 
   /**
    * Declares a test for the provided request. That request will be executed using
