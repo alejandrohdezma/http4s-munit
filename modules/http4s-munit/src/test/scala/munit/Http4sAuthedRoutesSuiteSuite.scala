@@ -34,14 +34,12 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
   override def munitHttp4sNameCreator(
       request: AuthedRequest[IO, String],
       testOptions: TestOptions,
-      repetitions: Option[Int],
-      maxParallel: Option[Int]
+      config: Http4sMunitConfig
   ): String =
     s"Test by ${request.context} - " + super.munitHttp4sNameCreator(
       request,
       testOptions,
-      repetitions,
-      maxParallel
+      config
     )
 
   test(GET(uri"hello") -> "jose").alias("Test 1") { response =>
