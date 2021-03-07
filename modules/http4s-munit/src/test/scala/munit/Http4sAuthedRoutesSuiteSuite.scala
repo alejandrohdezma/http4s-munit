@@ -31,12 +31,12 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
     case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
   }
 
-  override def munitHttp4sNameCreator(
+  override def http4sMUnitNameCreator(
       request: AuthedRequest[IO, String],
       testOptions: TestOptions,
       config: Http4sMunitConfig
   ): String =
-    s"Test by ${request.context} - " + super.munitHttp4sNameCreator(
+    s"Test by ${request.context} - " + super.http4sMUnitNameCreator(
       request,
       testOptions,
       config
