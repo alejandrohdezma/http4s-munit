@@ -71,6 +71,12 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
           else json
       )
 
+  /**
+   * Base fixture used to obtain a response from a request. Can be re-implemented if you want
+   * to override the default behaviour of a suite.
+   */
+  def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]]
+
   case class Http4sMUnitTestCreator(
       request: ContextRequest[IO, A],
       testOptions: TestOptions = TestOptions(""),
