@@ -34,10 +34,9 @@ class Http4sHttpRoutesSuiteSuite extends Http4sHttpRoutesSuite {
   override def munitHttp4sNameCreator(
       request: ContextRequest[IO, Unit],
       testOptions: TestOptions,
-      repetitions: Option[Int],
-      maxParallel: Option[Int]
+      config: Http4sMunitConfig
   ): String =
-    "Test - " + super.munitHttp4sNameCreator(request, testOptions, repetitions, maxParallel)
+    "Test - " + super.munitHttp4sNameCreator(request, testOptions, config)
 
   test(GET(uri"hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")

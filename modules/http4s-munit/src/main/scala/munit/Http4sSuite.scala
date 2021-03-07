@@ -34,11 +34,10 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
    * @param testOptions the options for the current test
    * @return the test's name
    */
-  def munitHttp4sNameCreator(
+  def http4sMUnitNameCreator(
       request: ContextRequest[IO, A],
       testOptions: TestOptions,
-      repetitions: Option[Int],
-      maxParallel: Option[Int]
+      config: Http4sMunitConfig
   ): String = {
     val clue = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
 
@@ -47,9 +46,9 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
       case context => context.show.some.filterNot(_.isEmpty())
     }
 
-    val reps = repetitions match {
+    val reps = config.repetitions match {
       case Some(rep) if rep > 1 =>
-        s" - executed $rep times" + maxParallel.fold("")(paral => s" with $paral in parallel")
+        s" - executed $rep times" + config.maxParallel.fold("")(paral => s" with $paral in parallel")
       case _ => ""
     }
     s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}$reps"
@@ -91,8 +90,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
   case class Http4sMUnitTestCreator(
       request: ContextRequest[IO, A],
       testOptions: TestOptions = TestOptions(""),
-      repetitions: Option[Int] = None,
-      maxParallel: Option[Int] = None
+      config: Http4sMunitConfig = Http4sMunitConfig.default
   ) {
 
     /** Mark a test case that is expected to fail */
@@ -121,49 +119,50 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     /** Allows to run the same test several times sequencially */
     def repeat(times: Int) =
       if (times < 1) Assertions.fail("times must be > 0")
-      else copy(repetitions = times.some)
+      else copy(config = Http4sMunitConfig(times.some, config.maxParallel))
 
     /** Allows to run the tests in parallel */
     def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
       if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
-      else copy(maxParallel = maxParallel.some)
+      else copy(config = Http4sMunitConfig(config.repetitions, maxParallel.some))
 
     /** Force the test to be executed just once */
     def doNotRepeat = copy(repetitions = None)
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
-      http4sMUnitFunFixture.test(testOptions.withName(http4sMUnitNameCreator(request, testOptions)).withLocation(loc)) {
-        client =>
-          Stream
-            .emits(1 to repetitions.getOrElse(config.values.repetitions.getOrElse(1)))
-            .covary[IO]
-            .parEvalMapUnordered(maxParallel.getOrElse(config.values.maxConcurrent.getOrElse(1))) { _ =>
-              client(request).use { response =>
-                IO(body(response)).attempt.flatMap {
-                  case Right(io: IO[Any]) => io
-                  case Right(a)           => IO.pure(a)
-                  case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                      t.getMessage().split("Clues \\{") match {
-                        case Array(p1, p2) =>
-                          val bodyClue =
-                            "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
-                              body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
-                          IO.raiseError(t.withMessage(p1 + bodyClue + p2))
-                        case _ => IO.raiseError(t)
-                      }
+      http4sMUnitFunFixture.test(
+        testOptions.withName(http4sMUnitNameCreator(request, testOptions, config)).withLocation(loc)
+      ) { client =>
+        Stream
+          .emits(1 to config.repetitions.getOrElse(1))
+          .covary[IO]
+          .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
+            client(request).use { response =>
+              IO(body(response)).attempt.flatMap {
+                case Right(io: IO[Any]) => io
+                case Right(a)           => IO.pure(a)
+                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                    t.getMessage().split("Clues \\{") match {
+                      case Array(p1, p2) =>
+                        val bodyClue =
+                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
+                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                      case _ => IO.raiseError(t)
                     }
-                  case Left(t: FailExceptionLike[_]) =>
-                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                      IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
-                    }
-                  case Left(t) => IO.raiseError(t)
-                }
+                  }
+                case Left(t: FailExceptionLike[_]) =>
+                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                  }
+                case Left(t) => IO.raiseError(t)
               }
             }
-            .compile
-            .drain
-            .unsafeRunSync()
+          }
+          .compile
+          .drain
+          .unsafeRunSync()
       }
 
   }
