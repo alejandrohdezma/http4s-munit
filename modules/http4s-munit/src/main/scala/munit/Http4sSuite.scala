@@ -3,6 +3,7 @@ package munit
 import cats.Show
 import cats.effect.IO
 import cats.effect.Resource
+import cats.effect.SyncIO
 import cats.syntax.all._
 
 import fs2.Stream
@@ -120,40 +121,39 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     /** Force the test to be executed just once */
     def doNotRepeat = copy(repetitions = None)
 
-    def execute[C](testCreator: TestOptions => (C => Any) => Unit, body: Response[IO] => Any)(
-        executor: C => Resource[IO, Response[IO]]
-    )(implicit loc: Location): Unit =
-      testCreator(testOptions.withName(http4sMUnitNameCreator(request, testOptions)).withLocation(loc)) { c: C =>
-        Stream
-          .emits(1 to repetitions.getOrElse(1))
-          .covary[IO]
-          .parEvalMapUnordered(maxParallel.getOrElse(1)) { _ =>
-            executor(c).use { response =>
-              IO(body(response)).attempt.flatMap {
-                case Right(io: IO[Any]) => io
-                case Right(a)           => IO.pure(a)
-                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                    t.getMessage().split("Clues \\{") match {
-                      case Array(p1, p2) =>
-                        val bodyClue =
-                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
-                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
-                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
-                      case _ => IO.raiseError(t)
+    def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
+      http4sMUnitFunFixture.test(testOptions.withName(http4sMUnitNameCreator(request, testOptions)).withLocation(loc)) {
+        client =>
+          Stream
+            .emits(1 to repetitions.getOrElse(1))
+            .covary[IO]
+            .parEvalMapUnordered(maxParallel.getOrElse(1)) { _ =>
+              client(request).use { response =>
+                IO(body(response)).attempt.flatMap {
+                  case Right(io: IO[Any]) => io
+                  case Right(a)           => IO.pure(a)
+                  case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                      t.getMessage().split("Clues \\{") match {
+                        case Array(p1, p2) =>
+                          val bodyClue =
+                            "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                              body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
+                          IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                        case _ => IO.raiseError(t)
+                      }
                     }
-                  }
-                case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
-                  }
-                case Left(t) => IO.raiseError(t)
+                  case Left(t: FailExceptionLike[_]) =>
+                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                      IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                    }
+                  case Left(t) => IO.raiseError(t)
+                }
               }
             }
-          }
-          .compile
-          .drain
-          .unsafeRunSync()
+            .compile
+            .drain
+            .unsafeRunSync()
       }
 
   }
