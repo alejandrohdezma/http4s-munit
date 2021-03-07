@@ -108,6 +108,8 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
       if (times < 1) Assertions.fail("times must be > 0")
       else copy(config = Http4sMunitConfig(times.some, config.maxParallel))
 
+    /** Force the test to be executed just once */
+    def doNotRepeat = copy(config = Http4sMunitConfig(None, None))
 
     /** Allows to run the tests in parallel */
     def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
