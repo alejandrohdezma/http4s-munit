@@ -17,6 +17,7 @@
 package munit
 
 import cats.effect.IO
+import cats.effect.Resource
 import cats.effect.SyncIO
 
 import org.http4s.ContextRequest
@@ -72,21 +73,13 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
    * This client is used under the hood to execute the requests.
    *
    * Override it if you want to use a different implementation or if you
-   * want to initalize in any way out of the default one (different timeouts,
+   * want to initalize it in any way out of the default one (different timeouts,
    * SSL certificates...).
    */
-  def http4sMUnitClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
+  def http4sMUnitClient: Resource[IO, Client[IO]] = AsyncHttpClient.resource[IO]()
 
-  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
-
-    def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
-      testCreator.execute[Client[IO]](a => b => http4sMUnitClient.test(a)(b)(loc), body) { client: Client[IO] =>
-        val uri = Uri.resolve(baseUri(), testCreator.request.req.uri)
-
-        client.run(testCreator.request.req.withUri(uri))
-      }
-
-  }
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, Unit] => Resource[IO, Response[IO]]]] =
+    ResourceFixture(http4sMUnitClient.map(client => req => client.run(req.req.withUri(baseUri().resolve(req.req.uri)))))
 
   /**
    * Declares a test for the provided request. That request will be executed using the
