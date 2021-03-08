@@ -25,7 +25,7 @@ import org.http4s.syntax.all._
 
 class HttpSuiteSuite extends HttpSuite {
 
-  override val baseUri: Uri = uri"https://api.github.com"
+  override def baseUri(): Uri = uri"https://api.github.com"
 
   test(GET(uri"users/gutiory")) { response =>
     assertEquals(response.status.code, 200)

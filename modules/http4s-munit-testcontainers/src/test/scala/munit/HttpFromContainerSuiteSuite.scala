@@ -18,6 +18,7 @@ package munit
 
 import java.util.concurrent.atomic.AtomicInteger
 
+import com.dimafeng.testcontainers.munit.TestContainerForAll
 import io.circe.Json
 import io.circe.syntax._
 import org.http4s.Method.GET
@@ -25,7 +26,7 @@ import org.http4s.circe._
 import org.http4s.client.dsl.io._
 import org.http4s.syntax.all._
 
-class HttpFromContainerSuiteSuite extends HttpFromContainerSuite {
+class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContainerForAll {
 
   override val containerDef = DummyHttpContainer.Def()
 
