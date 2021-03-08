@@ -99,7 +99,7 @@ abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite
   def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] = List(
     new ContainerUriExtractor({
       case c: SingleContainer[_] if c.exposedPorts.nonEmpty =>
-        Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head)}")
+        Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head /* scalafix:ok Disable.head */ )}")
     })
   )
 
