@@ -80,7 +80,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
 
   }
 
-  implicit class TestCreatorOps(private val testCreator: TestCreator) {
+  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
 
     def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
       testCreator.execute[Unit](a => b => test(a)(b(()))(loc), body) { _ =>
@@ -114,6 +114,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
    * }
    * }}}
    */
-  def test(request: IO[ContextRequest[IO, A]]): TestCreator = TestCreator(request.unsafeRunSync())
+  def test(request: IO[ContextRequest[IO, A]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request.unsafeRunSync())
 
 }

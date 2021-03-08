@@ -75,12 +75,12 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
    * want to initalize in any way out of the default one (different timeouts,
    * SSL certificates...).
    */
-  def httpClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
+  def http4sMUnitClient: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(AsyncHttpClient.resource[IO]())
 
-  implicit class TestCreatorOps(private val testCreator: TestCreator) {
+  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
 
     def apply(body: Response[IO] => Any)(implicit loc: munit.Location): Unit =
-      testCreator.execute[Client[IO]](a => b => httpClient.test(a)(b)(loc), body) { client: Client[IO] =>
+      testCreator.execute[Client[IO]](a => b => http4sMUnitClient.test(a)(b)(loc), body) { client: Client[IO] =>
         val uri = Uri.resolve(baseUri(), testCreator.request.req.uri)
 
         client.run(testCreator.request.req.withUri(uri))
@@ -113,6 +113,6 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
    * }
    * }}}
    */
-  def test(request: IO[Request[IO]]) = TestCreator(ContextRequest((), request.unsafeRunSync()))
+  def test(request: IO[Request[IO]]) = Http4sMUnitTestCreator(ContextRequest((), request.unsafeRunSync()))
 
 }
