@@ -50,7 +50,7 @@ import org.http4s.syntax.all._
  * class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
  *
  *  override val routes: AuthedRoutes[String, IO] = AuthedRoutes.of {
- *    case GET -> Root / "hello" as user => Ok(s"$user says Hi")
+ *    case GET -> Root / "hello" as user => Ok(user + " says Hi")
  *  }
  *
  *  test(GET(uri"hello").as("Jose")) { response =>
