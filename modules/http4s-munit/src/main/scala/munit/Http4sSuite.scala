@@ -105,6 +105,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
   case class Http4sMUnitTestCreator(
       request: ContextRequest[IO, A],
+      followingRequests: List[(String, Response[IO] => IO[ContextRequest[IO, A]])] = Nil,
       testOptions: TestOptions = TestOptions(""),
       config: Http4sMunitConfig = Http4sMunitConfig.default
   ) {
