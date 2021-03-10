@@ -16,12 +16,6 @@
 
 package munit
 
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-
-import cats.syntax.option._
-
 final case class Http4sMUnitConfig(repetitions: Option[Int], maxParallel: Option[Int])
 
 object Http4sMUnitConfig {
@@ -29,18 +23,12 @@ object Http4sMUnitConfig {
   lazy val default = Http4sMUnitConfig(
     sys.props
       .get("http4s.munit.repetitions")
-      .map(toIntOption)
-      .flatten
-      .orElse(sys.env.get("HTTP4S_MUNIT_REPETITIONS").map(toIntOption).flatten),
+      .orElse(sys.env.get("HTTP4S_MUNIT_REPETITIONS"))
+      .map(_.toInt),
     sys.props
       .get("http4s.munit.max.parallel")
-      .map(toIntOption)
-      .flatten
-      .orElse(sys.env.get("HTTP4S_MUNIT_MAX_PARALLEL").map(toIntOption).flatten)
+      .orElse(sys.env.get("HTTP4S_MUNIT_MAX_PARALLEL"))
+      .map(_.toInt)
   )
 
-  private def toIntOption(intStr: String): Option[Int] = Try(intStr.toInt) match {
-    case Success(value) => value.some
-    case Failure(_)     => None
-  }
 }
