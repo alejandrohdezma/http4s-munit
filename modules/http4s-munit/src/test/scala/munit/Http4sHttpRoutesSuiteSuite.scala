@@ -18,7 +18,6 @@ package munit
 
 import cats.effect.IO
 
-import org.http4s.ContextRequest
 import org.http4s.HttpRoutes
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
@@ -30,13 +29,6 @@ class Http4sHttpRoutesSuiteSuite extends Http4sHttpRoutesSuite {
     case GET -> Root / "hello"        => Ok("Hi")
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
   }
-
-  override def http4sMUnitNameCreator(
-      request: ContextRequest[IO, Unit],
-      testOptions: TestOptions,
-      config: Http4sMunitConfig
-  ): String =
-    "Test - " + super.http4sMUnitNameCreator(request, testOptions, config)
 
   test(GET(uri"hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")

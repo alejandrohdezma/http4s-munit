@@ -18,7 +18,6 @@ package munit
 
 import cats.effect.IO
 
-import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
@@ -30,17 +29,6 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
     case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
     case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
   }
-
-  override def http4sMUnitNameCreator(
-      request: AuthedRequest[IO, String],
-      testOptions: TestOptions,
-      config: Http4sMunitConfig
-  ): String =
-    s"Test by ${request.context} - " + super.http4sMUnitNameCreator(
-      request,
-      testOptions,
-      config
-    )
 
   test(GET(uri"hello") -> "jose").alias("Test 1") { response =>
     assertIO(response.as[String], "jose: Hi")
