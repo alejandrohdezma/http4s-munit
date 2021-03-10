@@ -22,11 +22,11 @@ import scala.util.Try
 
 import cats.syntax.option._
 
-final case class Http4sMunitConfig(repetitions: Option[Int], maxParallel: Option[Int])
+final case class Http4sMUnitConfig(repetitions: Option[Int], maxParallel: Option[Int])
 
-object Http4sMunitConfig {
+object Http4sMUnitConfig {
 
-  lazy val default = Http4sMunitConfig(
+  lazy val default = Http4sMUnitConfig(
     sys.props
       .get("http4s.munit.repetitions")
       .map(toIntOption)
