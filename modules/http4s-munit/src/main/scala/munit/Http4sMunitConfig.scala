@@ -36,7 +36,7 @@ object Http4sMunitConfig {
       .get("http4s.munit.maxParallel")
       .map(toIntOption)
       .flatten
-      .orElse(sys.env.get("HTTP4S_MAX_CONCURRENT").map(toIntOption).flatten)
+      .orElse(sys.env.get("HTTP4S_MAX_PARALLEL").map(toIntOption).flatten)
   )
 
   private def toIntOption(intStr: String): Option[Int] = Try(intStr.toInt) match {
