@@ -30,3 +30,4 @@ lazy val `http4s-munit-testcontainers` = module
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.3")
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.20" % Test)
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % Test)
+  .settings(libraryDependencies += "io.circe" %% "circe-generic" % "0.13.0" % Test)

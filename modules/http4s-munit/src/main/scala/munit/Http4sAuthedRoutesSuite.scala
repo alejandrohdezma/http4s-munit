@@ -84,6 +84,28 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
   override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
 
+  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
+
+    /**
+     * Provide a new request created from the response of the previous request. The
+     * alias entered as parameter will be used to construct the test's name.
+     *
+     * If this is the last `andThen` call, the response provided to the test will be
+     * the one obtained from executing this request
+     */
+    def andThen(alias: String)(f: Response[IO] => IO[ContextRequest[IO, A]]): Http4sMUnitTestCreator =
+      testCreator.copy(followingRequests = testCreator.followingRequests :+ ((alias, f)))
+
+    /**
+     * Provide a new request created from the response of the previous request.
+     *
+     * If this is the last `andThen` call, the response provided to the test will be
+     * the one obtained from executing this request
+     */
+    def andThen(f: Response[IO] => IO[ContextRequest[IO, A]]): Http4sMUnitTestCreator = andThen("")(f)
+
+  }
+
   /**
    * Declares a test for the provided request. That request will be executed using
    * the routes provided in `routes`.
