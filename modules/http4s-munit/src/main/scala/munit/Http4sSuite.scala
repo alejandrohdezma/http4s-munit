@@ -154,28 +154,36 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
           .emits(1 to config.repetitions.getOrElse(1))
           .covary[IO]
           .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
-            client(request).use { response =>
-              IO(body(response)).attempt.flatMap {
-                case Right(io: IO[Any]) => io
-                case Right(a)           => IO.pure(a)
-                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                    t.getMessage().split("Clues \\{") match {
-                      case Array(p1, p2) =>
-                        val bodyClue =
-                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
-                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
-                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
-                      case _ => IO.raiseError(t)
-                    }
-                  }
-                case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
-                  }
-                case Left(t) => IO.raiseError(t)
+            followingRequests
+              .foldLeft(client(request)) { (previousRequest, nextRequest) =>
+                for {
+                  previousResponse <- previousRequest
+                  request          <- nextRequest._2(previousResponse).to[Resource[IO, *]]
+                  response         <- client(request)
+                } yield response
               }
-            }
+              .use { response =>
+                IO(body(response)).attempt.flatMap {
+                  case Right(io: IO[Any]) => io
+                  case Right(a)           => IO.pure(a)
+                  case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                      t.getMessage().split("Clues \\{") match {
+                        case Array(p1, p2) =>
+                          val bodyClue =
+                            "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                              body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
+                          IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                        case _ => IO.raiseError(t)
+                      }
+                    }
+                  case Left(t: FailExceptionLike[_]) =>
+                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                      IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                    }
+                  case Left(t) => IO.raiseError(t)
+                }
+              }
           }
           .compile
           .drain
