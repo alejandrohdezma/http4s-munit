@@ -33,10 +33,10 @@ object Http4sMUnitConfig {
       .flatten
       .orElse(sys.env.get("HTTP4S_MUNIT_REPETITIONS").map(toIntOption).flatten),
     sys.props
-      .get("http4s.munit.maxParallel")
+      .get("http4s.munit.max.parallel")
       .map(toIntOption)
       .flatten
-      .orElse(sys.env.get("HTTP4S_MAX_PARALLEL").map(toIntOption).flatten)
+      .orElse(sys.env.get("HTTP4S_MUNIT_MAX_PARALLEL").map(toIntOption).flatten)
   )
 
   private def toIntOption(intStr: String): Option[Int] = Try(intStr.toInt) match {
