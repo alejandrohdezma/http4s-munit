@@ -39,23 +39,48 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
   /**
    * Allows altering the name of the generated tests.
    *
-   * It will generate test names like:
+   * By default it will generate test names like:
    *
    * {{{
-   * test(GET(uri"users" / 42))               // GET -> users/42
-   * test(GET(uri"users")).alias("All users") // GET -> users (All users)
+   * // GET -> users/42
+   * test(GET(uri"users" / 42))
+   *
+   * // GET -> users (All users)
+   * test(GET(uri"users")).alias("All users")
+   *
+   * // GET -> users as user-1
+   * test(GET(uri"users").as("user-1"))
+   *
+   * // GET -> users - executed 10 times with 2 in parallel
+   * test(GET(uri"users")).repeat(10).parallel(2)
+   *
+   * // GET -> users (retrieve the list of users and get the first user from the list)
+   * test(GET(uri"users"))
+   *    .alias("retrieve the list of users")
+   *    .andThen("get the first user from the list")(_.as[List[User]].flatMap {
+   *      case Nil               => fail("The list of users should not be empty")
+   *      case (head: User) :: _ => GET(uri"users" / head.id.show)
+   *    })
    * }}}
    *
    * @param request the test's request
+   * @param followingRequests the following request' aliases
    * @param testOptions the options for the current test
+   * @param config the configuration for this test
    * @return the test's name
    */
   def http4sMUnitNameCreator(
       request: ContextRequest[IO, A],
+      followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMunitConfig
   ): String = {
-    val clue = if (testOptions.name.nonEmpty) s" (${testOptions.name})" else ""
+    val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
+      case Nil                 => ""
+      case List(head)          => s" ($head)"
+      case List(first, second) => s" ($first and $second)"
+      case list                => s"${list.init.mkString(" (", ", ", ", and")} ${list.last})" // scalafix:ok
+    }
 
     val context = request.context match {
       case _: Unit => None
@@ -67,6 +92,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
         s" - executed $rep times" + config.maxParallel.fold("")(paral => s" with $paral in parallel")
       case _ => ""
     }
+
     s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}$reps"
   }
 
@@ -105,6 +131,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
   case class Http4sMUnitTestCreator(
       request: ContextRequest[IO, A],
+      followingRequests: List[(String, Response[IO] => IO[ContextRequest[IO, A]])] = Nil,
       testOptions: TestOptions = TestOptions(""),
       config: Http4sMunitConfig = Http4sMunitConfig.default
   ) {
@@ -147,34 +174,44 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(
-        testOptions.withName(http4sMUnitNameCreator(request, testOptions, config)).withLocation(loc)
+        testOptions
+          .withName(http4sMUnitNameCreator(request, followingRequests.map(_._1), testOptions, config))
+          .withLocation(loc)
       ) { client =>
         Stream
           .emits(1 to config.repetitions.getOrElse(1))
           .covary[IO]
           .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
-            client(request).use { response =>
-              IO(body(response)).attempt.flatMap {
-                case Right(io: IO[Any]) => io
-                case Right(a)           => IO.pure(a)
-                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                    t.getMessage().split("Clues \\{") match {
-                      case Array(p1, p2) =>
-                        val bodyClue =
-                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
-                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
-                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
-                      case _ => IO.raiseError(t)
-                    }
-                  }
-                case Left(t: FailExceptionLike[_]) =>
-                  response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
-                  }
-                case Left(t) => IO.raiseError(t)
+            followingRequests
+              .foldLeft(client(request)) { (previousRequest, nextRequest) =>
+                for {
+                  previousResponse <- previousRequest
+                  request          <- nextRequest._2(previousResponse).to[Resource[IO, *]]
+                  response         <- client(request)
+                } yield response
               }
-            }
+              .use { response =>
+                IO(body(response)).attempt.flatMap {
+                  case Right(io: IO[Any]) => io
+                  case Right(a)           => IO.pure(a)
+                  case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                      t.getMessage().split("Clues \\{") match {
+                        case Array(p1, p2) =>
+                          val bodyClue =
+                            "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                              body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
+                          IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                        case _ => IO.raiseError(t)
+                      }
+                    }
+                  case Left(t: FailExceptionLike[_]) =>
+                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
+                      IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                    }
+                  case Left(t) => IO.raiseError(t)
+                }
+              }
           }
           .compile
           .drain

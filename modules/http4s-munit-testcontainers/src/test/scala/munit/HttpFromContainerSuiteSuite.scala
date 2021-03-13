@@ -16,13 +16,14 @@
 
 package munit
 
-import java.util.concurrent.atomic.AtomicInteger
+import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 import io.circe.Json
+import io.circe.generic.auto._
 import io.circe.syntax._
-import org.http4s.Method.GET
-import org.http4s.circe._
+import org.http4s.Method._
+import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.dsl.io._
 import org.http4s.syntax.all._
 
@@ -30,52 +31,31 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContai
 
   override val containerDef = DummyHttpContainer.Def()
 
-  test(GET(uri"posts")) { response =>
+  case class Post(id: Int)
+
+  test(GET(uri"posts"))
+    .alias("retrieve the list of posts")
+    .andThen("get the first post from the list")(_.as[List[Post]].flatMap {
+      case Nil               => fail("The list of posts should not be empty")
+      case (head: Post) :: _ => GET(uri"posts" / head.id.show)
+    })
+    .andThen("delete it")(_.as[Post].flatMap { post =>
+      DELETE(uri"posts" / post.id.show)
+    }) { response =>
+      assertEquals(response.status.code, 200)
+
+      assertIO(response.as[Json], Json.obj())
+    }
+
+  test(GET(uri"posts")).alias("retrieve the remaining posts") { response =>
     assertEquals(response.status.code, 200)
 
     val expected = Json.arr(
-      Json.obj("id" := 1, "body" := "foo", "published" := true),
-      Json.obj("id" := 2, "body" := "bar", "published" := false)
+      Json.obj("id" := 2, "body" := "Second", "published" := false),
+      Json.obj("id" := 3, "body" := "Third", "published"  := true)
     )
 
     assertIO(response.as[Json], expected)
-  }
-
-  val reps                   = 1000
-  val numTest: AtomicInteger = new AtomicInteger(0)
-
-  test(GET(uri"posts"))
-    .alias("Stress Test")
-    .repeat(reps)
-    .parallel(10) { response =>
-      numTest.incrementAndGet()
-      val expected = Json.arr(
-        Json.obj("id" := 1, "body" := "foo", "published" := true),
-        Json.obj("id" := 2, "body" := "bar", "published" := false)
-      )
-      assertIO(response.as[Json], expected)
-
-    }
-
-  test("all individual tests in a stress test must be runned") {
-    assertEquals(numTest.get(), reps)
-  }
-
-  val numDoNotRepTest: AtomicInteger = new AtomicInteger(0)
-  test(GET(uri"posts"))
-    .alias("DoNotRepeat Test")
-    .doNotRepeat { response =>
-      numDoNotRepTest.incrementAndGet()
-      val expected = Json.arr(
-        Json.obj("id" := 1, "body" := "foo", "published" := true),
-        Json.obj("id" := 2, "body" := "bar", "published" := false)
-      )
-      assertIO(response.as[Json], expected)
-
-    }
-
-  test("tests with doNotRepeat flag must be just runned once") {
-    assertEquals(numDoNotRepTest.get(), 1)
   }
 
 }
