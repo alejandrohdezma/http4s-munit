@@ -6,7 +6,7 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
 
 jobs:
@@ -48,7 +48,7 @@ jobs:
           jvm: adopt:1.11
           apps: sbt
       - name: Enable Coursier cache
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Check if `.github/auto_assign.yml` exists
         id: check_files
         uses: andstor/file-existence-action@v1
@@ -95,7 +95,7 @@ jobs:
           jvm: ${{ matrix.jdk }}
           apps: sbt
       - name: Enable Coursier cache
-        uses: coursier/cache-action@v5
+        uses: coursier/cache-action@v6
       - name: Run checks
         run: sbt ci-test
         env:
