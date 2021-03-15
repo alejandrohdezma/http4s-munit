@@ -16,31 +16,28 @@
 
 package munit
 
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
+/**
+ * Test's configuration.
+ *
+ * @param repetitions number of times a test must be repeated
+ * @param maxParallel maximum number of repetitions to run in parallel
+ *
+ * @author Alejandro Hernández
+ * @author José Gutiérrez
+ */
+final case class Http4sMUnitConfig(repetitions: Option[Int], maxParallel: Option[Int])
 
-import cats.syntax.option._
+object Http4sMUnitConfig {
 
-final case class Http4sMunitConfig(repetitions: Option[Int], maxParallel: Option[Int])
-
-object Http4sMunitConfig {
-
-  lazy val default = Http4sMunitConfig(
+  lazy val default = Http4sMUnitConfig(
     sys.props
       .get("http4s.munit.repetitions")
-      .map(toIntOption)
-      .flatten
-      .orElse(sys.env.get("HTTP4S_MUNIT_REPETITIONS").map(toIntOption).flatten),
+      .orElse(sys.env.get("HTTP4S_MUNIT_REPETITIONS"))
+      .map(_.toInt),
     sys.props
-      .get("http4s.munit.maxParallel")
-      .map(toIntOption)
-      .flatten
-      .orElse(sys.env.get("HTTP4S_MAX_PARALLEL").map(toIntOption).flatten)
+      .get("http4s.munit.max.parallel")
+      .orElse(sys.env.get("HTTP4S_MUNIT_MAX_PARALLEL"))
+      .map(_.toInt)
   )
 
-  private def toIntOption(intStr: String): Option[Int] = Try(intStr.toInt) match {
-    case Success(value) => value.some
-    case Failure(_)     => None
-  }
 }

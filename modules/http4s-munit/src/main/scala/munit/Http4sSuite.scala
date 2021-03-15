@@ -73,7 +73,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
       request: ContextRequest[IO, A],
       followingRequests: List[String],
       testOptions: TestOptions,
-      config: Http4sMunitConfig
+      config: Http4sMUnitConfig
   ): String = {
     val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
       case Nil                 => ""
@@ -133,7 +133,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
       request: ContextRequest[IO, A],
       followingRequests: List[(String, Response[IO] => IO[ContextRequest[IO, A]])] = Nil,
       testOptions: TestOptions = TestOptions(""),
-      config: Http4sMunitConfig = Http4sMunitConfig.default
+      config: Http4sMUnitConfig = Http4sMUnitConfig.default
   ) {
 
     /** Mark a test case that is expected to fail */
@@ -162,15 +162,15 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     /** Allows to run the same test several times sequencially */
     def repeat(times: Int) =
       if (times < 1) Assertions.fail("times must be > 0")
-      else copy(config = Http4sMunitConfig(times.some, config.maxParallel))
+      else copy(config = Http4sMUnitConfig(times.some, config.maxParallel))
 
     /** Force the test to be executed just once */
-    def doNotRepeat = copy(config = Http4sMunitConfig(None, None))
+    def doNotRepeat = copy(config = Http4sMUnitConfig(None, None))
 
     /** Allows to run the tests in parallel */
     def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
       if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
-      else copy(config = Http4sMunitConfig(config.repetitions, maxParallel.some))
+      else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some))
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(
