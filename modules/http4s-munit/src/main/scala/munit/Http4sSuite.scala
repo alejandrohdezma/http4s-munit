@@ -175,7 +175,7 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(
         testOptions
-          .withName(http4sMUnitNameCreator(request, followingRequests.map(_._1), testOptions, config))
+          .withName(http4sMUnitNameCreator(request, followingRequests.map(_._1), testOptions.withLocation(loc), config))
           .withLocation(loc)
       ) { client =>
         Stream
