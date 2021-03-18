@@ -50,7 +50,7 @@ jobs:
           required_approval_count: 1
   scala-steward:
     runs-on: ubuntu-latest
-    name: Run `sbt fix generateCiFiles` in Scala Steward PRs
+    name: "Process Scala Steward PRs: auto-approves, enable auto-merge..."
     if: |
       github.event_name == 'pull_request' &&
       github.event.pull_request.head.repo.full_name == github.repository &&
@@ -90,7 +90,7 @@ jobs:
       - name: Enable auto-merge for this PR
         uses: alexwilson/enable-github-automerge-action@main
         with:
-          github-token: ${{ steps.installation_token.outputs.token }}
+          github-token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
           merge-method: "MERGE"
       - name: Auto-approve Scala Steward PRs
         uses: hmarr/auto-approve-action@v2
