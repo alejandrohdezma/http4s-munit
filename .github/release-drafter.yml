@@ -4,10 +4,6 @@
 
 name-template: "v$NEXT_PATCH_VERSION"
 tag-template: "v$NEXT_PATCH_VERSION"
-exclude-labels:
-  - "auto-update"
-  - "auto-documentation"
-  - "auto-changelog"
 categories:
   - title: "⚠️ Breaking changes"
     label: "breaking-change"
@@ -31,8 +27,41 @@ template: |
   $CONTRIBUTORS
 replacers:
   - search: '/(?:and )?@dependabot-preview(?:\[bot\])?,?/g'
-    replace: ''
+    replace: ""
   - search: '/(?:and )?@dependabot(?:\[bot\])?,?/g'
-    replace: ''
+    replace: ""
   - search: '/(?:and )?@scala-steward(?:\[bot\])?,?/g'
-    replace: ''
+    replace: ""
+  - search: '/(?:and )?@alejandrohdezma-steward(?:\[bot\])?,?/g'
+    replace: ""
+autolabeler:
+  - label: "enhancement"
+    branch:
+      - '/enhancement\/.+/'
+      - '/feature\/.+/'
+  - label: "documentation"
+    files:
+      - "*.md"
+    branch:
+      - '/docs\/.+/'
+      - '/doc\/.+/'
+  - label: "breaking-change"
+    branch:
+      - '/breaking\/.+/'
+      - '/break\/.+/'
+  - label: "bug"
+    branch:
+      - '/bug\/.+/'
+      - '/fix\/.+/'
+  - label: "tests"
+    branch:
+      - '/test\/.+/'
+      - '/tests\/.+/'
+  - label: "dependency-update"
+    branch:
+      - '/dep\/.+/'
+      - '/dependency\/.+/'
+      - '/dependency-update\/.+/'
+  - label: "scala-steward"
+    branch:
+      - '/update\/.+/'
