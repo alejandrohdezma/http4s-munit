@@ -127,7 +127,13 @@ jobs:
           apps: sbt
       - name: Enable Coursier cache
         uses: coursier/cache-action@v6
-      - name: Run checks
+      - name: Run checks (non-fork)
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        run: sbt ci-test
+        env:
+          GITHUB_TOKEN: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+      - name: Run checks (fork)
+        if: github.event.pull_request.head.repo.full_name != github.repository
         run: sbt ci-test
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
