@@ -17,6 +17,8 @@ categories:
     labels:
       - "dependency-update"
       - "scala-steward"
+exclude-labels:
+  - 'build'
 template: |
   ## What's changed
 
@@ -65,3 +67,6 @@ autolabeler:
   - label: "scala-steward"
     branch:
       - '/update\/.+/'
+  - label: "build"
+    files:
+      - "project/**"
