@@ -20,6 +20,8 @@ package munit
   *
   * @param repetitions number of times a test must be repeated
   * @param maxParallel maximum number of repetitions to run in parallel
+  * @param showAllStackTraces if all stacktraces should be printed when
+  *   multiple failures occurred in a repeated test
   *
   * @author Alejandro Hernández
   * @author José Gutiérrez

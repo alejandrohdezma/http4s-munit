@@ -11,6 +11,7 @@ addCommandAlias("ci-publish", "github; ci-release")
 lazy val documentation = project
   .enablePlugins(MdocPlugin)
   .settings(mdocOut := file("."))
+  .dependsOn(`http4s-munit-testcontainers` % "compile->test")
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.27")
