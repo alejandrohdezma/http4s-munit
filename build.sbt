@@ -1,8 +1,8 @@
-ThisBuild / scalaVersion             := "2.13.6"
-ThisBuild / crossScalaVersions       := Seq("2.12.14", "2.13.6")
-ThisBuild / organization             := "com.alejandrohdezma"
-ThisBuild / extraCollaborators       += Collaborator.github("gutiory")
-ThisBuild / Test / parallelExecution := false
+ThisBuild / scalaVersion       := "2.13.6"
+ThisBuild / crossScalaVersions := Seq("2.12.14", "2.13.6")
+ThisBuild / organization       := "com.alejandrohdezma"
+ThisBuild / extraCollaborators += Collaborator.github("gutiory")
+ThisBuild / Test / testOptions += Tests.Argument(TestFrameworks.MUnit, "+l")
 
 addCommandAlias("ci-test", "fix --check; mdoc; +test")
 addCommandAlias("ci-docs", "github; headerCreateAll; mdoc")
