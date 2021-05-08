@@ -2,7 +2,6 @@ ThisBuild / scalaVersion             := "2.13.6"
 ThisBuild / crossScalaVersions       := Seq("2.12.14", "2.13.6")
 ThisBuild / organization             := "com.alejandrohdezma"
 ThisBuild / extraCollaborators       += Collaborator.github("gutiory")
-ThisBuild / testFrameworks           += new TestFramework("munit.Framework")
 ThisBuild / Test / parallelExecution := false
 
 addCommandAlias("ci-test", "fix --check; mdoc; +test")
