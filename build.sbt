@@ -18,12 +18,12 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-async-http-client" % "0.21.22")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.22")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.22")
-  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-2" % "1.0.2")
+  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-2" % "1.0.3")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.13.0")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.22" % Test)
   .settings(libraryDependencies += "org.typelevel" %% "mouse" % "1.0.2" % Test)
-  .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.11.3" cross CrossVersion.full))
+  .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.12.0" cross CrossVersion.full))
 
 lazy val `http4s-munit-testcontainers` = module
   .dependsOn(`http4s-munit`)
