@@ -60,10 +60,20 @@ import org.http4s.syntax.all._
  * }
  * }}}
  */
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
+abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
 
   /** The HTTP routes being tested */
   val routes: AuthedRoutes[A, IO]
+
+  /**
+   * @inheritdoc
+   */
+  override def http4sMUnitNameCreator(
+      request: AuthedRequest[IO, A],
+      followingRequests: List[String],
+      testOptions: TestOptions,
+      config: Http4sMUnitConfig
+  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(request, followingRequests, testOptions, config)
 
   implicit class Request2AuthedRequest(request: IO[Request[IO]]) {
 
@@ -83,28 +93,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
 
   override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
-
-  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
-
-    /**
-     * Provide a new request created from the response of the previous request. The
-     * alias entered as parameter will be used to construct the test's name.
-     *
-     * If this is the last `andThen` call, the response provided to the test will be
-     * the one obtained from executing this request
-     */
-    def andThen(alias: String)(f: Response[IO] => IO[ContextRequest[IO, A]]): Http4sMUnitTestCreator =
-      testCreator.copy(followingRequests = testCreator.followingRequests :+ ((alias, f)))
-
-    /**
-     * Provide a new request created from the response of the previous request.
-     *
-     * If this is the last `andThen` call, the response provided to the test will be
-     * the one obtained from executing this request
-     */
-    def andThen(f: Response[IO] => IO[ContextRequest[IO, A]]): Http4sMUnitTestCreator = andThen("")(f)
-
-  }
 
   /**
    * Declares a test for the provided request. That request will be executed using
@@ -131,6 +119,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[A] {
    * }
    * }}}
    */
-  def test(request: IO[ContextRequest[IO, A]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request.unsafeRunSync())
+  def test(request: IO[AuthedRequest[IO, A]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request.unsafeRunSync())
 
 }
