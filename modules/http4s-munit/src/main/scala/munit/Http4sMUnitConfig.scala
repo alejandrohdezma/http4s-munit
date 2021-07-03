@@ -16,15 +16,14 @@
 
 package munit
 
-/**
- * Test's configuration.
- *
- * @param repetitions number of times a test must be repeated
- * @param maxParallel maximum number of repetitions to run in parallel
- *
- * @author Alejandro Hernández
- * @author José Gutiérrez
- */
+/** Test's configuration.
+  *
+  * @param repetitions number of times a test must be repeated
+  * @param maxParallel maximum number of repetitions to run in parallel
+  *
+  * @author Alejandro Hernández
+  * @author José Gutiérrez
+  */
 final case class Http4sMUnitConfig(repetitions: Option[Int], maxParallel: Option[Int])
 
 object Http4sMUnitConfig {

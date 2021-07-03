@@ -28,47 +28,45 @@ import org.http4s.ContextRequest
 import org.http4s.Response
 import org.http4s.Uri
 
-/**
- * Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
- *
- * @author Alejandro Hernández
- * @author José Gutiérrez
- */
+/** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
+  *
+  * @author Alejandro Hernández
+  * @author José Gutiérrez
+  */
 abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
 
-  /**
-   * Allows altering the name of the generated tests.
-   *
-   * By default it will generate test names like:
-   *
-   * {{{
-   * // GET -> users/42
-   * test(GET(uri"users" / 42))
-   *
-   * // GET -> users (All users)
-   * test(GET(uri"users")).alias("All users")
-   *
-   * // GET -> users as user-1
-   * test(GET(uri"users").as("user-1"))
-   *
-   * // GET -> users - executed 10 times with 2 in parallel
-   * test(GET(uri"users")).repeat(10).parallel(2)
-   *
-   * // GET -> users (retrieve the list of users and get the first user from the list)
-   * test(GET(uri"users"))
-   *    .alias("retrieve the list of users")
-   *    .andThen("get the first user from the list")(_.as[List[User]].flatMap {
-   *      case Nil               => fail("The list of users should not be empty")
-   *      case (head: User) :: _ => GET(uri"users" / head.id.show)
-   *    })
-   * }}}
-   *
-   * @param request the test's request
-   * @param followingRequests the following request' aliases
-   * @param testOptions the options for the current test
-   * @param config the configuration for this test
-   * @return the test's name
-   */
+  /** Allows altering the name of the generated tests.
+    *
+    * By default it will generate test names like:
+    *
+    * {{{
+    * // GET -> users/42
+    * test(GET(uri"users" / 42))
+    *
+    * // GET -> users (All users)
+    * test(GET(uri"users")).alias("All users")
+    *
+    * // GET -> users as user-1
+    * test(GET(uri"users").as("user-1"))
+    *
+    * // GET -> users - executed 10 times with 2 in parallel
+    * test(GET(uri"users")).repeat(10).parallel(2)
+    *
+    * // GET -> users (retrieve the list of users and get the first user from the list)
+    * test(GET(uri"users"))
+    *    .alias("retrieve the list of users")
+    *    .andThen("get the first user from the list")(_.as[List[User]].flatMap {
+    *      case Nil               => fail("The list of users should not be empty")
+    *      case (head: User) :: _ => GET(uri"users" / head.id.show)
+    *    })
+    * }}}
+    *
+    * @param request the test's request
+    * @param followingRequests the following request' aliases
+    * @param testOptions the options for the current test
+    * @param config the configuration for this test
+    * @return the test's name
+    */
   def http4sMUnitNameCreator(
       request: ContextRequest[IO, A],
       followingRequests: List[String],
@@ -96,15 +94,14 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}$reps"
   }
 
-  /**
-   * Allows pretiffing the response's body before outputting it to logs.
-   *
-   * By default it will try to parse it as JSON and apply a code highlight
-   * if `munitAnsiColors` is `true`.
-   *
-   * @param body the response's body to prettify
-   * @return the prettified version of the response's body
-   */
+  /** Allows pretiffing the response's body before outputting it to logs.
+    *
+    * By default it will try to parse it as JSON and apply a code highlight
+    * if `munitAnsiColors` is `true`.
+    *
+    * @param body the response's body to prettify
+    * @return the prettified version of the response's body
+    */
   def http4sMUnitBodyPrettifier(body: String): String =
     parse(body)
       .map(_.spaces2)
@@ -123,10 +120,9 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
           else json
       )
 
-  /**
-   * Base fixture used to obtain a response from a request. Can be re-implemented if you want
-   * to override the default behaviour of a suite.
-   */
+  /** Base fixture used to obtain a response from a request. Can be re-implemented if you want
+    * to override the default behaviour of a suite.
+    */
   def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]]
 
   case class Http4sMUnitTestCreator(
@@ -139,12 +135,11 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     /** Mark a test case that is expected to fail */
     def fail: Http4sMUnitTestCreator = tag(Fail)
 
-    /**
-     * Mark a test case that has a tendency to non-deterministically fail for known or unknown reasons.
-     *
-     * By default, flaky tests fail like basic tests unless the `MUNIT_FLAKY_OK` environment variable is set to `true`.
-     * You can override [[munitFlakyOK]] to customize when it's OK for flaky tests to fail.
-     */
+    /** Mark a test case that has a tendency to non-deterministically fail for known or unknown reasons.
+      *
+      * By default, flaky tests fail like basic tests unless the `MUNIT_FLAKY_OK` environment variable is set to `true`.
+      * You can override [[munitFlakyOK]] to customize when it's OK for flaky tests to fail.
+      */
     def flaky: Http4sMUnitTestCreator = tag(Flaky)
 
     /** Skips an individual test case in a test suite */
