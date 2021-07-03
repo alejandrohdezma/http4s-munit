@@ -27,55 +27,52 @@ import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.asynchttpclient.AsyncHttpClient
 
-/**
- * Base class for suites testing remote HTTP servers.
- *
- * To use this class you'll need to provide the `Uri` of the remote container by
- * overriding `baseUri`.
- *
- * @example
- * {{{
- * import io.circe.Json
- *
- * import org.http4s.Method.GET
- * import org.http4s.Uri
- * import org.http4s.circe._
- * import org.http4s.client.dsl.io._
- * import org.http4s.syntax.all._
- *
- * class HttpSuiteSuite extends munit.HttpSuite {
- *
- *  override def baseUri(): Uri = uri"https://api.github.com"
- *
- *  test(GET(uri"users/gutiory")) { response =>
- *    assertEquals(response.status.code, 200)
- *
- *    val result = response.as[Json].map(_.hcursor.get[String]("login"))
- *
- *    assertIO(result, Right("gutiory"))
- *  }
- *
- * }
- * }}}
- *
- * @author Alejandro Hernández
- * @author José Gutiérrez
- */
+/** Base class for suites testing remote HTTP servers.
+  *
+  * To use this class you'll need to provide the `Uri` of the remote container by
+  * overriding `baseUri`.
+  *
+  * @example
+  * {{{
+  * import io.circe.Json
+  *
+  * import org.http4s.Method.GET
+  * import org.http4s.Uri
+  * import org.http4s.circe._
+  * import org.http4s.client.dsl.io._
+  * import org.http4s.syntax.all._
+  *
+  * class HttpSuiteSuite extends munit.HttpSuite {
+  *
+  *  override def baseUri(): Uri = uri"https://api.github.com"
+  *
+  *  test(GET(uri"users/gutiory")) { response =>
+  *    assertEquals(response.status.code, 200)
+  *
+  *    val result = response.as[Json].map(_.hcursor.get[String]("login"))
+  *
+  *    assertIO(result, Right("gutiory"))
+  *  }
+  *
+  * }
+  * }}}
+  *
+  * @author Alejandro Hernández
+  * @author José Gutiérrez
+  */
 abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
 
-  /**
-   * The base URI for all tests. This URI will prepend the one used in each
-   * test's request.
-   */
+  /** The base URI for all tests. This URI will prepend the one used in each
+    * test's request.
+    */
   def baseUri(): Uri
 
-  /**
-   * This client is used under the hood to execute the requests.
-   *
-   * Override it if you want to use a different implementation or if you
-   * want to initalize it in any way out of the default one (different timeouts,
-   * SSL certificates...).
-   */
+  /** This client is used under the hood to execute the requests.
+    *
+    * Override it if you want to use a different implementation or if you
+    * want to initalize it in any way out of the default one (different timeouts,
+    * SSL certificates...).
+    */
   def http4sMUnitClient: Resource[IO, Client[IO]] = AsyncHttpClient.resource[IO]()
 
   override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, Unit] => Resource[IO, Response[IO]]]] =
@@ -83,53 +80,50 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
 
   implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
 
-    /**
-     * Provide a new request created from the response of the previous request. The
-     * alias entered as parameter will be used to construct the test's name.
-     *
-     * If this is the last `andThen` call, the response provided to the test will be
-     * the one obtained from executing this request
-     */
+    /** Provide a new request created from the response of the previous request. The
+      * alias entered as parameter will be used to construct the test's name.
+      *
+      * If this is the last `andThen` call, the response provided to the test will be
+      * the one obtained from executing this request
+      */
     def andThen(alias: String)(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator =
       testCreator.copy(followingRequests =
         testCreator.followingRequests :+ ((alias, f.andThen(_.map(ContextRequest((), _)))))
       )
 
-    /**
-     * Provide a new request created from the response of the previous request.
-     *
-     * If this is the last `andThen` call, the response provided to the test will be
-     * the one obtained from executing this request
-     */
+    /** Provide a new request created from the response of the previous request.
+      *
+      * If this is the last `andThen` call, the response provided to the test will be
+      * the one obtained from executing this request
+      */
     def andThen(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator = andThen("")(f)
 
   }
 
-  /**
-   * Declares a test for the provided request. That request will be executed using the
-   * provided client in `httpClient` to the server indicated in `baseUri`.
-   *
-   * @example
-   * {{{
-   * test(GET(uri"users" / 42)) { response =>
-   *    // test body
-   * }
-   * }}}
-   *
-   * @example
-   * {{{
-   * test(POST(json, uri"users")).alias("Create a new user") { response =>
-   *    // test body
-   * }
-   * }}}
-   *
-   * @example
-   * {{{
-   * test(GET(uri"users" / 42)).flaky { response =>
-   *    // test body
-   * }
-   * }}}
-   */
+  /** Declares a test for the provided request. That request will be executed using the
+    * provided client in `httpClient` to the server indicated in `baseUri`.
+    *
+    * @example
+    * {{{
+    * test(GET(uri"users" / 42)) { response =>
+    *    // test body
+    * }
+    * }}}
+    *
+    * @example
+    * {{{
+    * test(POST(json, uri"users")).alias("Create a new user") { response =>
+    *    // test body
+    * }
+    * }}}
+    *
+    * @example
+    * {{{
+    * test(GET(uri"users" / 42)).flaky { response =>
+    *    // test body
+    * }
+    * }}}
+    */
   def test(request: IO[Request[IO]]) = Http4sMUnitTestCreator(ContextRequest((), request.unsafeRunSync()))
 
 }
