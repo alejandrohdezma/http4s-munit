@@ -26,37 +26,36 @@ import org.http4s.Request
 import org.http4s.Response
 import org.http4s.syntax.all._
 
-/**
- * Base class for suites testing `HttpRoutes`.
- *
- * To use this class you'll need to provide the routes being tested by
- * overriding `routes`.
- *
- * @example
- * {{{
- * import cats.effect.IO
- *
- * import org.http4s.HttpRoutes
- * import org.http4s.client.dsl.io._
- * import org.http4s.dsl.io._
- * import org.http4s.syntax.all._
- *
- * class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite[String] {
- *
- *  override val routes: HttpRoutes[IO] = HttpRoutes.of {
- *    case GET -> Root / "hello" => Ok("Hello!")
- *  }
- *
- *  test(GET(uri"hello")) { response =>
- *    assertIO(response.as[String], "Hello!")
- *  }
- *
- * }
- * }}}
- *
- * @author Alejandro Hernández
- * @author José Gutiérrez
- */
+/** Base class for suites testing `HttpRoutes`.
+  *
+  * To use this class you'll need to provide the routes being tested by
+  * overriding `routes`.
+  *
+  * @example
+  * {{{
+  * import cats.effect.IO
+  *
+  * import org.http4s.HttpRoutes
+  * import org.http4s.client.dsl.io._
+  * import org.http4s.dsl.io._
+  * import org.http4s.syntax.all._
+  *
+  * class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite[String] {
+  *
+  *  override val routes: HttpRoutes[IO] = HttpRoutes.of {
+  *    case GET -> Root / "hello" => Ok("Hello!")
+  *  }
+  *
+  *  test(GET(uri"hello")) { response =>
+  *    assertIO(response.as[String], "Hello!")
+  *  }
+  *
+  * }
+  * }}}
+  *
+  * @author Alejandro Hernández
+  * @author José Gutiérrez
+  */
 abstract class Http4sHttpRoutesSuite extends Http4sSuite[Unit] {
 
   /** The HTTP routes being tested */
@@ -67,53 +66,50 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Unit] {
 
   implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
 
-    /**
-     * Provide a new request created from the response of the previous request. The
-     * alias entered as parameter will be used to construct the test's name.
-     *
-     * If this is the last `andThen` call, the response provided to the test will be
-     * the one obtained from executing this request
-     */
+    /** Provide a new request created from the response of the previous request. The
+      * alias entered as parameter will be used to construct the test's name.
+      *
+      * If this is the last `andThen` call, the response provided to the test will be
+      * the one obtained from executing this request
+      */
     def andThen(alias: String)(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator =
       testCreator.copy(followingRequests =
         testCreator.followingRequests :+ ((alias, f.andThen(_.map(ContextRequest((), _)))))
       )
 
-    /**
-     * Provide a new request created from the response of the previous request.
-     *
-     * If this is the last `andThen` call, the response provided to the test will be
-     * the one obtained from executing this request
-     */
+    /** Provide a new request created from the response of the previous request.
+      *
+      * If this is the last `andThen` call, the response provided to the test will be
+      * the one obtained from executing this request
+      */
     def andThen(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator = andThen("")(f)
 
   }
 
-  /**
-   * Declares a test for the provided request. That request will be executed using
-   * the routes provided in `routes`.
-   *
-   * @example
-   * {{{
-   * test(GET(uri"users" / 42)) { response =>
-   *    // test body
-   * }
-   * }}}
-   *
-   * @example
-   * {{{
-   * test(POST(json, uri"users")).alias("Create a new user") { response =>
-   *    // test body
-   * }
-   * }}}
-   *
-   * @example
-   * {{{
-   * test(GET(uri"users" / 42)).flaky { response =>
-   *    // test body
-   * }
-   * }}}
-   */
+  /** Declares a test for the provided request. That request will be executed using
+    * the routes provided in `routes`.
+    *
+    * @example
+    * {{{
+    * test(GET(uri"users" / 42)) { response =>
+    *    // test body
+    * }
+    * }}}
+    *
+    * @example
+    * {{{
+    * test(POST(json, uri"users")).alias("Create a new user") { response =>
+    *    // test body
+    * }
+    * }}}
+    *
+    * @example
+    * {{{
+    * test(GET(uri"users" / 42)).flaky { response =>
+    *    // test body
+    * }
+    * }}}
+    */
   def test(request: IO[Request[IO]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(
     ContextRequest((), request.unsafeRunSync())
   )

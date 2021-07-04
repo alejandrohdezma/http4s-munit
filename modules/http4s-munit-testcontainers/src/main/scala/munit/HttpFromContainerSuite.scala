@@ -20,53 +20,52 @@ import com.dimafeng.testcontainers.SingleContainer
 import com.dimafeng.testcontainers.munit.TestContainersSuite
 import org.http4s.Uri
 
-/**
- * Base class for suites testing HTTP servers running in docker containers using testcontainers.
- *
- * To use this class you'll need to select also one of the two testcontainers specific suites:
- * `TestContainersForAll` or `TestContainersForEach`. Also you'll need to override the
- * `val containerDef: ContainerDef` definition with your container. Lastly you'll need to
- * ensure your container's URI is obtainable either by using the default extractor (which just uses
- * `localhost:first-exposed-port`) or providing an specific one for your container by overriding
- * the `http4sMUnitContainerUriExtractors` list.
- *
- * @example
- * {{{
- * import com.dimafeng.testcontainers.ContainerDef
- * import com.dimafeng.testcontainers.GenericContainer
- * import com.dimafeng.testcontainers.munit.TestContainerForAll
- *
- * import org.http4s.Method.GET
- * import org.http4s.client.dsl.io._
- * import org.http4s.syntax.all._
- *
- * import org.testcontainers.containers.wait.strategy.Wait
- *
- * class HttpFromContainerSuiteSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
- *
- *  override val containerDef = new ContainerDef {
- *
- *    override type Container = GenericContainer
- *
- *    protected def createContainer(): GenericContainer = GenericContainer(
- *      dockerImage = "briceburg/ping-pong",
- *      exposedPorts = Seq(80)
- *    )
- *
- *  }
- *
- *  test(GET(uri"ping")) { response =>
- *    assertEquals(response.status.code, 200)
- *
- *    assertIO(response.as[String], "pong")
- *  }
- *
- * }
- * }}}
- *
- * @author Alejandro Hernández
- * @author José Gutiérrez
- */
+/** Base class for suites testing HTTP servers running in docker containers using testcontainers.
+  *
+  * To use this class you'll need to select also one of the two testcontainers specific suites:
+  * `TestContainersForAll` or `TestContainersForEach`. Also you'll need to override the
+  * `val containerDef: ContainerDef` definition with your container. Lastly you'll need to
+  * ensure your container's URI is obtainable either by using the default extractor (which just uses
+  * `localhost:first-exposed-port`) or providing an specific one for your container by overriding
+  * the `http4sMUnitContainerUriExtractors` list.
+  *
+  * @example
+  * {{{
+  * import com.dimafeng.testcontainers.ContainerDef
+  * import com.dimafeng.testcontainers.GenericContainer
+  * import com.dimafeng.testcontainers.munit.TestContainerForAll
+  *
+  * import org.http4s.Method.GET
+  * import org.http4s.client.dsl.io._
+  * import org.http4s.syntax.all._
+  *
+  * import org.testcontainers.containers.wait.strategy.Wait
+  *
+  * class HttpFromContainerSuiteSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+  *
+  *  override val containerDef = new ContainerDef {
+  *
+  *    override type Container = GenericContainer
+  *
+  *    protected def createContainer(): GenericContainer = GenericContainer(
+  *      dockerImage = "briceburg/ping-pong",
+  *      exposedPorts = Seq(80)
+  *    )
+  *
+  *  }
+  *
+  *  test(GET(uri"ping")) { response =>
+  *    assertEquals(response.status.code, 200)
+  *
+  *    assertIO(response.as[String], "pong")
+  *  }
+  *
+  * }
+  * }}}
+  *
+  * @author Alejandro Hernández
+  * @author José Gutiérrez
+  */
 abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite {
 
   override def baseUri(): Uri = withContainers { (containers: Containers) =>
@@ -80,22 +79,21 @@ abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite
     def apply(containers: Containers): Option[Uri] = fn.lift(containers)
   }
 
-  /**
-   * This list contains ways to get the container's URI. The first succesfull URI that this
-   * list creates will be used as the test's base URI.
-   *
-   * By default it will only match `SingleContainer` by setting the URI to localhost with
-   * the container's first mapped port.
-   *
-   * If you want to add support for other containers you can add a new value to this list
-   * or override it completely:
-   *
-   * {{{
-   * override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
-   *   super.http4sMUnitContainerUriExtractors ++
-   *     List(new ContainerUriExtractor({ case c: MyContainer[_] => c.uri }))
-   * }}}
-   */
+  /** This list contains ways to get the container's URI. The first succesfull URI that this
+    * list creates will be used as the test's base URI.
+    *
+    * By default it will only match `SingleContainer` by setting the URI to localhost with
+    * the container's first mapped port.
+    *
+    * If you want to add support for other containers you can add a new value to this list
+    * or override it completely:
+    *
+    * {{{
+    * override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
+    *   super.http4sMUnitContainerUriExtractors ++
+    *     List(new ContainerUriExtractor({ case c: MyContainer[_] => c.uri }))
+    * }}}
+    */
   def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] = List(
     new ContainerUriExtractor({
       case c: SingleContainer[_] if c.exposedPorts.nonEmpty =>

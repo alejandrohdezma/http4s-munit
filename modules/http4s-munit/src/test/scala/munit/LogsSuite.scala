@@ -30,13 +30,12 @@ import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.syntax.all._
 
-/**
- * This suite ensures that the logs outputed by this library are correct.
- *
- * For this we create some dummy suites in the suite's companion object
- * (so they are not launched), execute them in a controlled runner, get
- * its output, and compare it against an expected one.
- */
+/** This suite ensures that the logs outputed by this library are correct.
+  *
+  * For this we create some dummy suites in the suite's companion object
+  * (so they are not launched), execute them in a controlled runner, get
+  * its output, and compare it against an expected one.
+  */
 class LogsSuite extends FunSuite {
 
   override def munitIgnore: Boolean = !scala.util.Properties.versionNumberString.startsWith("2.13")
