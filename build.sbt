@@ -22,7 +22,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.1")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.3" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.24" % Test)
-  .settings(libraryDependencies += "org.typelevel" %% "mouse" % "1.0.3" % Test)
+  .settings(libraryDependencies += "org.typelevel" %% "mouse" % "1.0.4" % Test)
   .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.0" cross CrossVersion.full))
 
 lazy val `http4s-munit-testcontainers` = module
