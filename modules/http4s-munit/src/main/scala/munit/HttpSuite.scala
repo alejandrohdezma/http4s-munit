@@ -25,7 +25,7 @@ import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.client.asynchttpclient.AsyncHttpClient
+import _root_.org.http4s.asynchttpclient.AsyncHttpClient
 
 /** Base class for suites testing remote HTTP servers.
   *
