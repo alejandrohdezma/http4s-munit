@@ -19,6 +19,7 @@ package munit
 import java.util.concurrent.atomic.AtomicInteger
 
 import cats.effect.IO
+import cats.syntax.eq._
 
 import org.http4s._
 import org.http4s.client.dsl.io._
@@ -69,4 +70,33 @@ class ParallelSuite extends Http4sHttpRoutesSuite {
 
   }
 
+  {
+    val executions: AtomicInteger = new AtomicInteger(0)
+    val exceptions: AtomicInteger = new AtomicInteger(0)
+    val successes: AtomicInteger  = new AtomicInteger(0)
+
+    test(GET(uri"it-does-not-mater"))
+      .alias("Boom!!!!")
+      .repeat(15)
+      .fail
+      .parallel(3) { response =>
+        if (executions.incrementAndGet() === 2) {
+          exceptions.incrementAndGet()
+          IO.raiseError(new Throwable("Boom!!!!"))
+        } else {
+          successes.incrementAndGet()
+          assertIO(response.as[String], "hello!")
+        }
+      }
+
+    test("check the number of exceptions thrown") {
+      assertEquals(executions.get(), 15)
+      assertEquals(exceptions.get(), 1)
+    }
+
+    test("check the number of succesful executions") {
+      assertEquals(executions.get(), 15)
+      assertEquals(successes.get(), 14)
+    }
+  }
 }
