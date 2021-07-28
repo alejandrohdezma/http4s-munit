@@ -157,15 +157,15 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     /** Allows to run the same test several times sequencially */
     def repeat(times: Int) =
       if (times < 1) Assertions.fail("times must be > 0")
-      else copy(config = Http4sMUnitConfig(times.some, config.maxParallel))
+      else copy(config = Http4sMUnitConfig(times.some, config.maxParallel, config.showAllStackTraces))
 
     /** Force the test to be executed just once */
-    def doNotRepeat = copy(config = Http4sMUnitConfig(None, None))
+    def doNotRepeat = copy(config = Http4sMUnitConfig(None, None, config.showAllStackTraces))
 
     /** Allows to run the tests in parallel */
     def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
       if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
-      else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some))
+      else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some, config.showAllStackTraces))
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(
@@ -173,8 +173,10 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
           .withName(http4sMUnitNameCreator(request, followingRequests.map(_._1), testOptions.withLocation(loc), config))
           .withLocation(loc)
       ) { client =>
+        val numRepetitions     = config.repetitions.getOrElse(1)
+        val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
         Stream
-          .emits(1 to config.repetitions.getOrElse(1))
+          .emits(1 to numRepetitions)
           .covary[IO]
           .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
             followingRequests
@@ -207,10 +209,31 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
                   case Left(t) => IO.raiseError(t)
                 }
               }
+              .attempt
           }
+          .mapFilter(_.swap.toOption)
           .compile
-          .drain
-          .unsafeRunSync()
+          .toList
+          .flatMap {
+            case Nil                                      => IO.unit
+            case List(throwables) if numRepetitions === 1 => IO.raiseError(throwables)
+            case throwables if showAllStackTraces =>
+              IO.raiseError(
+                new FailException(
+                  s"${throwables.size} / $numRepetitions  tests failed while execution this parallel test\n${throwables
+                    .map(_.getMessage())
+                    .mkString("/n/n")}",
+                  loc
+                )
+              )
+            case throwables =>
+              IO.raiseError(
+                new FailException(
+                  s"${throwables.size} / $numRepetitions tests failed while execution this parallel test",
+                  loc
+                )
+              )
+          }
       }
 
   }
