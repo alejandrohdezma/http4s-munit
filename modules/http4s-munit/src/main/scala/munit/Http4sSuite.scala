@@ -173,8 +173,10 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
           .withName(http4sMUnitNameCreator(request, followingRequests.map(_._1), testOptions.withLocation(loc), config))
           .withLocation(loc)
       ) { client =>
+        val numRepetitions     = config.repetitions.getOrElse(1)
+        val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
         Stream
-          .emits(1 to config.repetitions.getOrElse(1))
+          .emits(1 to numRepetitions)
           .covary[IO]
           .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
             followingRequests
@@ -207,10 +209,31 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
                   case Left(t) => IO.raiseError(t)
                 }
               }
+              .attempt
           }
+          .mapFilter(_.swap.toOption)
           .compile
-          .drain
-          .unsafeRunSync()
+          .toList
+          .flatMap {
+            case Nil                                      => IO.unit
+            case List(throwables) if numRepetitions === 1 => IO.raiseError(throwables)
+            case throwables if showAllStackTraces =>
+              IO.raiseError(
+                new FailException(
+                  s"${throwables.size} / $numRepetitions  tests failed while execution this parallel test\n${throwables
+                    .map(_.getMessage())
+                    .mkString("/n/n")}",
+                  loc
+                )
+              )
+            case throwables =>
+              IO.raiseError(
+                new FailException(
+                  s"${throwables.size} / $numRepetitions tests failed while execution this parallel test",
+                  loc
+                )
+              )
+          }
       }
 
   }
