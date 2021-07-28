@@ -157,15 +157,15 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     /** Allows to run the same test several times sequencially */
     def repeat(times: Int) =
       if (times < 1) Assertions.fail("times must be > 0")
-      else copy(config = Http4sMUnitConfig(times.some, config.maxParallel))
+      else copy(config = Http4sMUnitConfig(times.some, config.maxParallel, config.showAllStackTraces))
 
     /** Force the test to be executed just once */
-    def doNotRepeat = copy(config = Http4sMUnitConfig(None, None))
+    def doNotRepeat = copy(config = Http4sMUnitConfig(None, None, config.showAllStackTraces))
 
     /** Allows to run the tests in parallel */
     def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
       if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
-      else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some))
+      else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some, config.showAllStackTraces))
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(

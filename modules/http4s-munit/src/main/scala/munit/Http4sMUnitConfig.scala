@@ -24,7 +24,11 @@ package munit
   * @author Alejandro Hernández
   * @author José Gutiérrez
   */
-final case class Http4sMUnitConfig(repetitions: Option[Int], maxParallel: Option[Int])
+final case class Http4sMUnitConfig(
+    repetitions: Option[Int],
+    maxParallel: Option[Int],
+    showAllStackTraces: Option[Boolean]
+)
 
 object Http4sMUnitConfig {
 
@@ -36,7 +40,10 @@ object Http4sMUnitConfig {
     sys.props
       .get("http4s.munit.max.parallel")
       .orElse(sys.env.get("HTTP4S_MUNIT_MAX_PARALLEL"))
-      .map(_.toInt)
+      .map(_.toInt),
+    sys.props
+      .get("http4s.munit.showAllStackTraces")
+      .orElse(sys.env.get("HTTP4S_SHOW_ALL_STACK_TRACES"))
+      .map(_.toBoolean)
   )
-
 }
