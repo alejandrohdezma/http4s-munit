@@ -25,7 +25,6 @@ import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.client.asynchttpclient.AsyncHttpClient
 
 /** Base class for suites testing remote HTTP servers.
   *
@@ -34,15 +33,23 @@ import org.http4s.client.asynchttpclient.AsyncHttpClient
   *
   * @example
   * {{{
-  * import io.circe.Json
+  * import scala.concurrent.ExecutionContext.global
   *
+  * import cats.effect.IO
+  * import cats.effect.Resource
+  *
+  * import io.circe.Json
   * import org.http4s.Method.GET
   * import org.http4s.Uri
   * import org.http4s.circe._
+  * import org.http4s.client.Client
+  * import org.http4s.client.blaze.BlazeClientBuilder
   * import org.http4s.client.dsl.io._
   * import org.http4s.syntax.all._
   *
   * class HttpSuiteSuite extends munit.HttpSuite {
+  *
+  *  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
   *
   *  override def baseUri(): Uri = uri"https://api.github.com"
   *
@@ -69,11 +76,9 @@ abstract class HttpSuite extends Http4sSuite[Unit] with CatsEffectFunFixtures {
 
   /** This client is used under the hood to execute the requests.
     *
-    * Override it if you want to use a different implementation or if you
-    * want to initalize it in any way out of the default one (different timeouts,
-    * SSL certificates...).
+    * Users need to provide a value for it using one of the available clients.
     */
-  def http4sMUnitClient: Resource[IO, Client[IO]] = AsyncHttpClient.resource[IO]()
+  def http4sMUnitClient: Resource[IO, Client[IO]]
 
   override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, Unit] => Resource[IO, Response[IO]]]] =
     ResourceFixture(http4sMUnitClient.map(client => req => client.run(req.req.withUri(baseUri().resolve(req.req.uri)))))
