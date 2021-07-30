@@ -31,17 +31,26 @@ import org.http4s.Uri
   *
   * @example
   * {{{
+  * import scala.concurrent.ExecutionContext.global
+  *
+  * import cats.effect.IO
+  * import cats.effect.Resource
+  *
   * import com.dimafeng.testcontainers.ContainerDef
   * import com.dimafeng.testcontainers.GenericContainer
   * import com.dimafeng.testcontainers.munit.TestContainerForAll
   *
   * import org.http4s.Method.GET
+  * import org.http4s.client.Client
+  * import org.http4s.client.blaze.BlazeClientBuilder
   * import org.http4s.client.dsl.io._
   * import org.http4s.syntax.all._
   *
   * import org.testcontainers.containers.wait.strategy.Wait
   *
   * class HttpFromContainerSuiteSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+  *
+  *  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
   *
   *  override val containerDef = new ContainerDef {
   *

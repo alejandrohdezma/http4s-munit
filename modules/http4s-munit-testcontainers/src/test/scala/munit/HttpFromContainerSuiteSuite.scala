@@ -16,6 +16,10 @@
 
 package munit
 
+import scala.concurrent.ExecutionContext.global
+
+import cats.effect.IO
+import cats.effect.Resource
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
@@ -24,10 +28,14 @@ import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.Method._
 import org.http4s.circe.CirceEntityCodec._
+import org.http4s.client.Client
+import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.syntax.all._
 
 class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContainerForAll {
+
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
 
   override val containerDef = DummyHttpContainer.Def()
 
