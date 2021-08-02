@@ -1,9 +1,8 @@
-ThisBuild / scalaVersion             := "2.13.4"
-ThisBuild / crossScalaVersions       := Seq("2.12.12", "2.13.4")
-ThisBuild / organization             := "com.alejandrohdezma"
-ThisBuild / extraCollaborators       += Collaborator.github("gutiory")
-ThisBuild / testFrameworks           += new TestFramework("munit.Framework")
-ThisBuild / Test / parallelExecution := false
+ThisBuild / scalaVersion       := "2.13.6"
+ThisBuild / crossScalaVersions := Seq("2.12.14", "2.13.6")
+ThisBuild / organization       := "com.alejandrohdezma"
+ThisBuild / extraCollaborators += Collaborator.github("gutiory")
+ThisBuild / Test / testOptions += Tests.Argument(TestFrameworks.MUnit, "+l")
 
 addCommandAlias("ci-test", "fix --check; mdoc; +test")
 addCommandAlias("ci-docs", "github; headerCreateAll; mdoc")
@@ -12,6 +11,7 @@ addCommandAlias("ci-publish", "github; ci-release")
 lazy val documentation = project
   .enablePlugins(MdocPlugin)
   .settings(mdocOut := file("."))
+  .dependsOn(`http4s-munit-testcontainers` % "compile->test")
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.27")

@@ -16,7 +16,6 @@
 
 package munit
 
-import cats.Show
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
@@ -24,16 +23,14 @@ import cats.syntax.all._
 
 import fs2.Stream
 import io.circe.parser.parse
-import org.http4s.ContextRequest
 import org.http4s.Response
-import org.http4s.Uri
 
 /** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
   *
   * @author Alejandro Hernández
   * @author José Gutiérrez
   */
-abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
+abstract class Http4sSuite[Request] extends CatsEffectSuite {
 
   /** Allows altering the name of the generated tests.
     *
@@ -68,33 +65,13 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     * @return the test's name
     */
   def http4sMUnitNameCreator(
-      request: ContextRequest[IO, A],
+      request: Request,
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig
-  ): String = {
-    val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
-      case Nil                 => ""
-      case List(head)          => s" ($head)"
-      case List(first, second) => s" ($first and $second)"
-      case list                => s"${list.init.mkString(" (", ", ", ", and")} ${list.last})" // scalafix:ok
-    }
+  ): String
 
-    val context = request.context match {
-      case _: Unit => None
-      case context => context.show.some.filterNot(_.isEmpty())
-    }
-
-    val reps = config.repetitions match {
-      case Some(rep) if rep > 1 =>
-        s" - executed $rep times" + config.maxParallel.fold("")(paral => s" with $paral in parallel")
-      case _ => ""
-    }
-
-    s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}$reps"
-  }
-
-  /** Allows pretiffing the response's body before outputting it to logs.
+  /** Allows prettifing the response's body before outputting it to logs.
     *
     * By default it will try to parse it as JSON and apply a code highlight
     * if `munitAnsiColors` is `true`.
@@ -123,11 +100,11 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
   /** Base fixture used to obtain a response from a request. Can be re-implemented if you want
     * to override the default behaviour of a suite.
     */
-  def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]]
+  def http4sMUnitFunFixture: SyncIO[FunFixture[Request => Resource[IO, Response[IO]]]]
 
   case class Http4sMUnitTestCreator(
-      request: ContextRequest[IO, A],
-      followingRequests: List[(String, Response[IO] => IO[ContextRequest[IO, A]])] = Nil,
+      request: Request,
+      followingRequests: List[(String, Response[IO] => IO[Request])] = Nil,
       testOptions: TestOptions = TestOptions(""),
       config: Http4sMUnitConfig = Http4sMUnitConfig.default
   ) {
@@ -166,6 +143,22 @@ abstract class Http4sSuite[A: Show] extends CatsEffectSuite {
     def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
       if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
       else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some, config.showAllStackTraces))
+
+    /** Provide a new request created from the response of the previous request. The
+      * alias entered as parameter will be used to construct the test's name.
+      *
+      * If this is the last `andThen` call, the response provided to the test will be
+      * the one obtained from executing this request
+      */
+    def andThen(alias: String)(f: Response[IO] => IO[Request]): Http4sMUnitTestCreator =
+      copy(followingRequests = followingRequests :+ ((alias, f)))
+
+    /** Provide a new request created from the response of the previous request.
+      *
+      * If this is the last `andThen` call, the response provided to the test will be
+      * the one obtained from executing this request
+      */
+    def andThen(f: Response[IO] => IO[Request]): Http4sMUnitTestCreator = andThen("")(f)
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(
