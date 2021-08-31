@@ -27,7 +27,7 @@ lazy val `http4s-munit` = module
 
 lazy val `http4s-munit-testcontainers` = module
   .dependsOn(`http4s-munit`)
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.6")
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.7")
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.26" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.21.26" % Test)
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.5" % Test)
