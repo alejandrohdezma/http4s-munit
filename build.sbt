@@ -14,7 +14,7 @@ lazy val documentation = project
   .dependsOn(`http4s-munit-testcontainers` % "compile->test")
 
 lazy val `http4s-munit` = module
-  .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.28")
+  .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.21.26")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.21.26")
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-2" % "1.0.5")
