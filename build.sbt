@@ -23,7 +23,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.21.28" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.21.28" % Test)
   .settings(libraryDependencies += "org.typelevel" %% "mouse" % "1.0.4" % Test)
-  .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.1" cross CrossVersion.full))
+  .settings(addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full))
 
 lazy val `http4s-munit-testcontainers` = module
   .dependsOn(`http4s-munit`)
