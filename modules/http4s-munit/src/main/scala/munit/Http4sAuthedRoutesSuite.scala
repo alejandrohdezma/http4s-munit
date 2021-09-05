@@ -72,12 +72,10 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   implicit class Request2AuthedRequest(request: IO[Request[IO]]) {
 
-    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context.
-      */
+    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
     def context(context: A): IO[AuthedRequest[IO, A]] = request.map(AuthedRequest(context, _))
 
-    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context.
-      */
+    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
     def ->(a: A): IO[AuthedRequest[IO, A]] = context(a)
 
   }
