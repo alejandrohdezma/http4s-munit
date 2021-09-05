@@ -27,8 +27,10 @@ import org.http4s.Response
 
 /** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
   *
-  * @author Alejandro Hernández
-  * @author José Gutiérrez
+  * @author
+  *   Alejandro Hernández
+  * @author
+  *   José Gutiérrez
   */
 abstract class Http4sSuite[Request] extends CatsEffectSuite {
 
@@ -51,18 +53,23 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite {
     *
     * // GET -> users (retrieve the list of users and get the first user from the list)
     * test(GET(uri"users"))
-    *    .alias("retrieve the list of users")
-    *    .andThen("get the first user from the list")(_.as[List[User]].flatMap {
-    *      case Nil               => fail("The list of users should not be empty")
-    *      case (head: User) :: _ => GET(uri"users" / head.id.show)
-    *    })
+    *     .alias("retrieve the list of users")
+    *     .andThen("get the first user from the list")(_.as[List[User]].flatMap {
+    *       case Nil               => fail("The list of users should not be empty")
+    *       case (head: User) :: _ => GET(uri"users" / head.id.show)
+    *     })
     * }}}
     *
-    * @param request the test's request
-    * @param followingRequests the following request' aliases
-    * @param testOptions the options for the current test
-    * @param config the configuration for this test
-    * @return the test's name
+    * @param request
+    *   the test's request
+    * @param followingRequests
+    *   the following request' aliases
+    * @param testOptions
+    *   the options for the current test
+    * @param config
+    *   the configuration for this test
+    * @return
+    *   the test's name
     */
   def http4sMUnitNameCreator(
       request: Request,
@@ -73,11 +80,12 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite {
 
   /** Allows prettifing the response's body before outputting it to logs.
     *
-    * By default it will try to parse it as JSON and apply a code highlight
-    * if `munitAnsiColors` is `true`.
+    * By default it will try to parse it as JSON and apply a code highlight if `munitAnsiColors` is `true`.
     *
-    * @param body the response's body to prettify
-    * @return the prettified version of the response's body
+    * @param body
+    *   the response's body to prettify
+    * @return
+    *   the prettified version of the response's body
     */
   def http4sMUnitBodyPrettifier(body: String): String =
     parse(body)
@@ -97,8 +105,8 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite {
           else json
       )
 
-  /** Base fixture used to obtain a response from a request. Can be re-implemented if you want
-    * to override the default behaviour of a suite.
+  /** Base fixture used to obtain a response from a request. Can be re-implemented if you want to override the default
+    * behaviour of a suite.
     */
   def http4sMUnitFunFixture: SyncIO[FunFixture[Request => Resource[IO, Response[IO]]]]
 
@@ -144,19 +152,19 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite {
       if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
       else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some, config.showAllStackTraces))
 
-    /** Provide a new request created from the response of the previous request. The
-      * alias entered as parameter will be used to construct the test's name.
+    /** Provide a new request created from the response of the previous request. The alias entered as parameter will be
+      * used to construct the test's name.
       *
-      * If this is the last `andThen` call, the response provided to the test will be
-      * the one obtained from executing this request
+      * If this is the last `andThen` call, the response provided to the test will be the one obtained from executing
+      * this request
       */
     def andThen(alias: String)(f: Response[IO] => IO[Request]): Http4sMUnitTestCreator =
       copy(followingRequests = followingRequests :+ ((alias, f)))
 
     /** Provide a new request created from the response of the previous request.
       *
-      * If this is the last `andThen` call, the response provided to the test will be
-      * the one obtained from executing this request
+      * If this is the last `andThen` call, the response provided to the test will be the one obtained from executing
+      * this request
       */
     def andThen(f: Response[IO] => IO[Request]): Http4sMUnitTestCreator = andThen("")(f)
 

@@ -18,13 +18,17 @@ package munit
 
 /** Test's configuration.
   *
-  * @param repetitions number of times a test must be repeated
-  * @param maxParallel maximum number of repetitions to run in parallel
-  * @param showAllStackTraces if all stacktraces should be printed when
-  *   multiple failures occurred in a repeated test
+  * @param repetitions
+  *   number of times a test must be repeated
+  * @param maxParallel
+  *   maximum number of repetitions to run in parallel
+  * @param showAllStackTraces
+  *   if all stacktraces should be printed when multiple failures occurred in a repeated test
   *
-  * @author Alejandro Hernández
-  * @author José Gutiérrez
+  * @author
+  *   Alejandro Hernández
+  * @author
+  *   José Gutiérrez
   */
 final case class Http4sMUnitConfig(
     repetitions: Option[Int],
@@ -48,4 +52,5 @@ object Http4sMUnitConfig {
       .orElse(sys.env.get("HTTP4S_SHOW_ALL_STACK_TRACES"))
       .map(_.toBoolean)
   )
+
 }
