@@ -22,12 +22,11 @@ import org.http4s.Uri
 
 /** Base class for suites testing HTTP servers running in docker containers using testcontainers.
   *
-  * To use this class you'll need to select also one of the two testcontainers specific suites:
-  * `TestContainersForAll` or `TestContainersForEach`. Also you'll need to override the
-  * `val containerDef: ContainerDef` definition with your container. Lastly you'll need to
-  * ensure your container's URI is obtainable either by using the default extractor (which just uses
-  * `localhost:first-exposed-port`) or providing an specific one for your container by overriding
-  * the `http4sMUnitContainerUriExtractors` list.
+  * To use this class you'll need to select also one of the two testcontainers specific suites: `TestContainersForAll`
+  * or `TestContainersForEach`. Also you'll need to override the `val containerDef: ContainerDef` definition with your
+  * container. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor
+  * (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the
+  * `http4sMUnitContainerUriExtractors` list.
   *
   * @example
   * {{{
@@ -50,30 +49,32 @@ import org.http4s.Uri
   *
   * class HttpFromContainerSuiteSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
   *
-  *  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  *   override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
   *
-  *  override val containerDef = new ContainerDef {
+  *   override val containerDef = new ContainerDef {
   *
-  *    override type Container = GenericContainer
+  *     override type Container = GenericContainer
   *
-  *    protected def createContainer(): GenericContainer = GenericContainer(
-  *      dockerImage = "briceburg/ping-pong",
-  *      exposedPorts = Seq(80)
-  *    )
+  *     protected def createContainer(): GenericContainer = GenericContainer(
+  *       dockerImage = "briceburg/ping-pong",
+  *       exposedPorts = Seq(80)
+  *     )
   *
-  *  }
+  *   }
   *
-  *  test(GET(uri"ping")) { response =>
-  *    assertEquals(response.status.code, 200)
+  *   test(GET(uri"ping")) { response =>
+  *     assertEquals(response.status.code, 200)
   *
-  *    assertIO(response.as[String], "pong")
-  *  }
+  *     assertIO(response.as[String], "pong")
+  *   }
   *
   * }
   * }}}
   *
-  * @author Alejandro Hernández
-  * @author José Gutiérrez
+  * @author
+  *   Alejandro Hernández
+  * @author
+  *   José Gutiérrez
   */
 abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite {
 
@@ -85,17 +86,18 @@ abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite
   }
 
   final class ContainerUriExtractor(fn: PartialFunction[Containers, Uri]) extends Function1[Containers, Option[Uri]] {
+
     def apply(containers: Containers): Option[Uri] = fn.lift(containers)
+
   }
 
-  /** This list contains ways to get the container's URI. The first succesfull URI that this
-    * list creates will be used as the test's base URI.
+  /** This list contains ways to get the container's URI. The first succesfull URI that this list creates will be used
+    * as the test's base URI.
     *
-    * By default it will only match `SingleContainer` by setting the URI to localhost with
-    * the container's first mapped port.
+    * By default it will only match `SingleContainer` by setting the URI to localhost with the container's first mapped
+    * port.
     *
-    * If you want to add support for other containers you can add a new value to this list
-    * or override it completely:
+    * If you want to add support for other containers you can add a new value to this list or override it completely:
     *
     * {{{
     * override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
