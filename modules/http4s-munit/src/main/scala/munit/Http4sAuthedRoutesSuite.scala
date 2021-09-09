@@ -70,13 +70,13 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
       config: Http4sMUnitConfig
   ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(request, followingRequests, testOptions, config)
 
-  implicit class Request2AuthedRequest(request: IO[Request[IO]]) {
+  implicit class Request2AuthedRequest(request: Request[IO]) {
 
     /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
-    def context(context: A): IO[AuthedRequest[IO, A]] = request.map(AuthedRequest(context, _))
+    def context(context: A): AuthedRequest[IO, A] = AuthedRequest(context, request)
 
     /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
-    def ->(a: A): IO[AuthedRequest[IO, A]] = context(a)
+    def ->(a: A): AuthedRequest[IO, A] = context(a)
 
   }
 
@@ -106,6 +106,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
     * }
     * }}}
     */
-  def test(request: IO[AuthedRequest[IO, A]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request.unsafeRunSync())
+  def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request)
 
 }

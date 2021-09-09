@@ -19,6 +19,7 @@ package munit
 import scala.reflect.ClassTag
 
 import cats.effect.IO
+import cats.syntax.all._
 
 import sbt.testing.EventHandler
 import sbt.testing.TaskDef
@@ -151,11 +152,16 @@ object LogsSuite {
 
     test(GET(uri"posts" / "1")).alias("get first post")(_ => ())
 
-    test(GET(uri"posts" / "1")).alias("get first post").andThen("second post")(_ => GET(uri"posts" / "2"))(_ => ())
+    test(GET(uri"posts" / "1"))
+      .alias("get first post")
+      .andThen("second post")(_ => GET(uri"posts" / "2").pure[IO])(_ => ())
 
-    test(GET(uri"posts" / "1")).alias("get 1st post and 2nd secuentially").andThen(_ => GET(uri"posts" / "2"))(_ => ())
+    test(GET(uri"posts" / "1"))
+      .alias("get 1st post and 2nd secuentially")
+      .andThen(_ => GET(uri"posts" / "2").pure[IO])(_ => ())
 
-    test(GET(uri"posts" / "1")).andThen("get first and second posts secuentially")(_ => GET(uri"posts" / "2"))(_ => ())
+    test(GET(uri"posts" / "1"))
+      .andThen("get first and second posts secuentially")(_ => GET(uri"posts" / "2").pure[IO])(_ => ())
 
   }
 

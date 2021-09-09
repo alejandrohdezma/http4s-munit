@@ -115,6 +115,6 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
     * }
     * }}}
     */
-  def test(request: IO[Request[IO]]) = Http4sMUnitTestCreator(request.unsafeRunSync())
+  def test(request: Request[IO]) = Http4sMUnitTestCreator(request)
 
 }

@@ -278,7 +278,7 @@ Sometimes (mostly while using the `HttpSuite` or `HttpFromContainerSuite`) one t
 ```scala mdoc:silent
 test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
-    .andThen("delete it")(_.as[String].flatMap { id =>
+    .andThen("delete it")(_.as[String].map { id =>
       DELETE(uri"posts" / id)
     }) { response =>
       assertEquals(response.status.code, 204)
@@ -304,7 +304,7 @@ test(GET(uri"users")).repeat(10).parallel(2)
 // GET -> posts?number=10 (look for the 10th post and delete it)
 test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
-    .andThen("delete it")(_.as[String].flatMap { id => DELETE(uri"posts" / id) })
+    .andThen("delete it")(_.as[String].map { id => DELETE(uri"posts" / id) })
 ```
 
 ### Body in failed assertions

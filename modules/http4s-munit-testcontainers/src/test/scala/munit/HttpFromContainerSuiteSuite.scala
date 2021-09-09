@@ -43,11 +43,11 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContai
 
   test(GET(uri"posts"))
     .alias("retrieve the list of posts")
-    .andThen("get the first post from the list")(_.as[List[Post]].flatMap {
+    .andThen("get the first post from the list")(_.as[List[Post]].map {
       case Nil               => fail("The list of posts should not be empty")
       case (head: Post) :: _ => GET(uri"posts" / head.id.show)
     })
-    .andThen("delete it")(_.as[Post].flatMap { post =>
+    .andThen("delete it")(_.as[Post].map { post =>
       DELETE(uri"posts" / post.id.show)
     }) { response =>
       assertEquals(response.status.code, 200)
