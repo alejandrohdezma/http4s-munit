@@ -9,7 +9,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % 0.7.0 % Test)
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % 0.8.0 % Test)
 ```
 
 ## Usage
@@ -118,7 +118,7 @@ class GitHubSuite extends munit.HttpSuite {
 The last of our suites can be used when you want to test a "live" container inside a [test-containers](https://github.com/testcontainers/testcontainers-scala) container. This suite lives in a different artifact, so if you want to use it, you'll need to add the following to your `build.sbt`:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.7.0 % Test)
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.8.0 % Test)
 ```
 
 It is similar to the previous suite (in fact it extends from it) but instead of a base URI we provide a container definition:
