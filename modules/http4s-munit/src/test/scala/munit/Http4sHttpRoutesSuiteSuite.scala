@@ -30,11 +30,11 @@ class Http4sHttpRoutesSuiteSuite extends Http4sHttpRoutesSuite {
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
   }
 
-  test(GET(uri"hello")).alias("Test 1") { response =>
+  test(GET(uri"/hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")
   }
 
-  test(GET(uri"hello" / "Jose")).alias("Test 2") { response =>
+  test(GET(uri"/hello" / "Jose")).alias("Test 2") { response =>
     assertIO(response.as[String], "Hi Jose")
   }
 
