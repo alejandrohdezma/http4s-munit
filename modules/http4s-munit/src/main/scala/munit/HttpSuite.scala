@@ -42,7 +42,7 @@ import org.http4s.client.Client
   * import org.http4s.Uri
   * import org.http4s.circe._
   * import org.http4s.client.Client
-  * import org.http4s.client.blaze.BlazeClientBuilder
+  * import org.http4s.blaze.client.BlazeClientBuilder
   * import org.http4s.client.dsl.io._
   * import org.http4s.syntax.all._
   *
@@ -115,6 +115,6 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
     * }
     * }}}
     */
-  def test(request: IO[Request[IO]]) = Http4sMUnitTestCreator(request.unsafeRunSync())
+  def test(request: Request[IO]) = Http4sMUnitTestCreator(request)
 
 }

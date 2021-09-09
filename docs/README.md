@@ -91,7 +91,7 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
 import org.http4s.syntax.all._
@@ -147,7 +147,7 @@ import cats.effect.Resource
 
 import org.http4s.dsl.io._
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.syntax.all._
 
@@ -276,9 +276,9 @@ test(GET(uri"hello")).doNotRepeat { response =>
 Sometimes (mostly while using the `HttpSuite` or `HttpFromContainerSuite`) one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
 
 ```scala mdoc:silent
-test(GET(uri"posts" +? ("number", 10)))
+test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
-    .andThen("delete it")(_.as[String].flatMap { id =>
+    .andThen("delete it")(_.as[String].map { id =>
       DELETE(uri"posts" / id)
     }) { response =>
       assertEquals(response.status.code, 204)
@@ -302,9 +302,9 @@ test(GET(uri"users")).alias("all users")
 test(GET(uri"users")).repeat(10).parallel(2)
 
 // GET -> posts?number=10 (look for the 10th post and delete it)
-test(GET(uri"posts" +? ("number", 10)))
+test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
-    .andThen("delete it")(_.as[String].flatMap { id => DELETE(uri"posts" / id) })
+    .andThen("delete it")(_.as[String].map { id => DELETE(uri"posts" / id) })
 ```
 
 ### Body in failed assertions

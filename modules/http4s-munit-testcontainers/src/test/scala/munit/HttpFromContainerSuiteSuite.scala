@@ -27,9 +27,9 @@ import io.circe.Json
 import io.circe.generic.auto._
 import io.circe.syntax._
 import org.http4s.Method._
+import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.circe.CirceEntityCodec._
 import org.http4s.client.Client
-import org.http4s.client.blaze.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.syntax.all._
 
@@ -43,11 +43,11 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContai
 
   test(GET(uri"posts"))
     .alias("retrieve the list of posts")
-    .andThen("get the first post from the list")(_.as[List[Post]].flatMap {
+    .andThen("get the first post from the list")(_.as[List[Post]].map {
       case Nil               => fail("The list of posts should not be empty")
       case (head: Post) :: _ => GET(uri"posts" / head.id.show)
     })
-    .andThen("delete it")(_.as[Post].flatMap { post =>
+    .andThen("delete it")(_.as[Post].map { post =>
       DELETE(uri"posts" / post.id.show)
     }) { response =>
       assertEquals(response.status.code, 200)
