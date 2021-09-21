@@ -26,7 +26,7 @@ import org.http4s.Uri
   * or `TestContainersForEach`. Also you'll need to override the `val containerDef: ContainerDef` definition with your
   * container. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor
   * (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the
-  * `http4sMUnitContainerUriExtractors` list.
+  * `http4sMUnitContainerUriExtractor` list.
   *
   * @example
   * {{{
@@ -79,16 +79,9 @@ import org.http4s.Uri
 abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite {
 
   override def baseUri(): Uri = withContainers { (containers: Containers) =>
-    http4sMUnitContainerUriExtractors.view
-      .map(_(containers))
-      .collectFirst { case Some(uri) => uri }
+    http4sMUnitContainerUriExtractor
+      .lift(containers)
       .getOrElse(fail("Unable to get container's URI"))
-  }
-
-  final class ContainerUriExtractor(fn: PartialFunction[Containers, Uri]) extends Function1[Containers, Option[Uri]] {
-
-    def apply(containers: Containers): Option[Uri] = fn.lift(containers)
-
   }
 
   /** This list contains ways to get the container's URI. The first succesfull URI that this list creates will be used
@@ -100,16 +93,13 @@ abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite
     * If you want to add support for other containers you can add a new value to this list or override it completely:
     *
     * {{{
-    * override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
-    *   super.http4sMUnitContainerUriExtractors ++
-    *     List(new ContainerUriExtractor({ case c: MyContainer[_] => c.uri }))
+    * override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
+    *   super.http4sMUnitContainerUriExtractor orElse { case c: MyContainer[_] => c.uri }
     * }}}
     */
-  def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] = List(
-    new ContainerUriExtractor({
-      case c: SingleContainer[_] if c.exposedPorts.nonEmpty =>
-        Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head /* scalafix:ok Disable.head */ )}")
-    })
-  )
+  def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
+    case c: SingleContainer[_] if c.exposedPorts.nonEmpty =>
+      Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head /* scalafix:ok Disable.head */ )}")
+  }
 
 }
