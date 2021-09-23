@@ -169,12 +169,21 @@ class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestCont
 }
 ```
 
-As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractors` list:
+As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractor` function:
 
 ```scala
-override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
-  super.http4sMUnitContainerUriExtractors ++
-    List(new ContainerUriExtractor({ case _: DummyHttpContainer => uri"http://localhost:80" }))
+override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
+  super.http4sMUnitContainerUriExtractor orElse {
+    case _: DummyHttpContainer => uri"http://localhost:80" 
+  }
+```
+
+or
+
+```scala
+override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
+  case _: DummyHttpContainer => uri"http://localhost:80" 
+}
 ```
 
 ## Other features
