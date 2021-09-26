@@ -111,14 +111,16 @@ class LogsSuite extends FunSuite {
 
     val stringBuilder = new StringBuilder()
 
-    val eventHandler: EventHandler = event =>
+    val eventHandler: EventHandler = event => {
       stringBuilder
         .append("==> ")
         .append(event.status())
         .append(" ")
         .append(event.fullyQualifiedName())
         .append(if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
-        .append("\n"): Unit
+        .append("\n")
+      ()
+    }
 
     tasks.foreach(_.execute(eventHandler, Array()))
 
