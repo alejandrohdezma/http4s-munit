@@ -12,6 +12,16 @@ lazy val documentation = project
   .enablePlugins(MdocPlugin)
   .settings(mdocOut := file("."))
   .dependsOn(`http4s-munit-testcontainers` % "compile->test")
+  .settings(mdocVariables ++= {
+    val allReleases = releases.value.filter(_.isPublished)
+
+    if (allReleases.nonEmpty) {
+      val `0.7.x` = allReleases.filter(_.name.startsWith("v0.7.")).reverse.head.tag.substring(1)
+      val `0.8.x` = allReleases.filter(_.name.startsWith("v0.8.")).reverse.head.tag.substring(1)
+
+      Map("VERSION_021x" -> `0.7.x`, "VERSION_022x" -> `0.8.x`)
+    } else Map.empty[String, String]
+  })
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
