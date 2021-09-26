@@ -81,8 +81,6 @@ In the case you don't want to use static http4s routes, but a running HTTP serve
 this URI before making a call using a real http4s `Client` (that you'll have to provide using `http4sMUnitClient`).
 
 ```scala mdoc:reset:silent
-import scala.concurrent.ExecutionContext.global
-
 import cats.effect.IO
 import cats.effect.Resource
 
@@ -91,14 +89,14 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
 class GitHubSuite extends munit.HttpSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
   override val baseUri: Uri = uri"https://api.github.com"
 
@@ -140,22 +138,20 @@ object DummyHttpContainer {
 ```
 
 ```scala mdoc:silent
-import scala.concurrent.ExecutionContext.global
-
 import cats.effect.IO
 import cats.effect.Resource
 
 import org.http4s.dsl.io._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 
 class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
   // A dummy container definition using "briceburg/ping-pong" image
   override val containerDef = DummyHttpContainer.Def()
