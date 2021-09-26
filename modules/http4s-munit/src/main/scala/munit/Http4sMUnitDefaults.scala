@@ -35,7 +35,7 @@ object Http4sMUnitDefaults {
       case Nil                 => ""
       case List(head)          => s" ($head)"
       case List(first, second) => s" ($first and $second)"
-      case list                => s"${list.init.mkString(" (", ", ", ", and")} ${list.last})" // scalafix:ok
+      case list                => s"${list.init.mkString(" (", ", ", ", and")} ${list.last})"
     }
 
     val context = request.context match {

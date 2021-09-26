@@ -41,7 +41,7 @@ import org.http4s.Uri
   *
   * import org.http4s.Method.GET
   * import org.http4s.client.Client
-  * import org.http4s.blaze.client.BlazeClientBuilder
+  * import org.http4s.ember.client.EmberClientBuilder
   * import org.http4s.client.dsl.io._
   * import org.http4s.syntax.all._
   *
@@ -99,7 +99,7 @@ abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite
     */
   def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
     case c: SingleContainer[_] if c.exposedPorts.nonEmpty =>
-      Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head /* scalafix:ok Disable.head */ )}")
+      Uri.unsafeFromString(s"http://localhost:${c.mappedPort(c.exposedPorts.head)}")
   }
 
 }

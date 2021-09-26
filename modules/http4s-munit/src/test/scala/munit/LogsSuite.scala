@@ -24,7 +24,6 @@ import cats.syntax.all._
 import sbt.testing.EventHandler
 import sbt.testing.TaskDef
 
-import mouse.ignore
 import org.http4s.HttpRoutes
 import org.http4s.Response
 import org.http4s.client.dsl.io._
@@ -112,16 +111,16 @@ class LogsSuite extends FunSuite {
 
     val stringBuilder = new StringBuilder()
 
-    val eventHandler: EventHandler = event =>
-      ignore {
-        stringBuilder
-          .append("==> ")
-          .append(event.status())
-          .append(" ")
-          .append(event.fullyQualifiedName())
-          .append(if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
-          .append("\n")
-      }
+    val eventHandler: EventHandler = event => {
+      stringBuilder
+        .append("==> ")
+        .append(event.status())
+        .append(" ")
+        .append(event.fullyQualifiedName())
+        .append(if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
+        .append("\n")
+      ()
+    }
 
     tasks.foreach(_.execute(eventHandler, Array()))
 
