@@ -85,7 +85,7 @@ jobs:
           files: ".github/auto_assign.yml"
       - name: Add Pull Request Reviewer
         if: steps.check_files.outputs.files_exists == 'true'
-        uses: kentaro-m/auto-assign-action@v1.1.2
+        uses: kentaro-m/auto-assign-action@v1.2.0
         with:
           repo-token: ${{ steps.installation_token.outputs.token }}
       - name: Enable auto-merge for this PR
@@ -100,7 +100,7 @@ jobs:
       - run: sbt generateCiFiles fix || sbt "generateCiFiles; scalafmtAll; scalafmtSbt" || true
       - name: Push changes
         id: push
-        uses: stefanzweifel/git-auto-commit-action@v4.10.0
+        uses: stefanzweifel/git-auto-commit-action@v4.12.0
         with:
           commit_message: Regenerate files with `sbt generateCiFiles fix`
   test:
