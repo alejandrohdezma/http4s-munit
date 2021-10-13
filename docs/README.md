@@ -9,7 +9,11 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION@ % Test)
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION@ % Test) // if using http4s 0.23.x
+
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION_022x@ % Test) // if using http4s 0.22.x
+
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION_021x@ % Test) // if using http4s 0.21.x
 ```
 
 ## Usage
@@ -81,8 +85,6 @@ In the case you don't want to use static http4s routes, but a running HTTP serve
 this URI before making a call using a real http4s `Client` (that you'll have to provide using `http4sMUnitClient`).
 
 ```scala mdoc:reset:silent
-import scala.concurrent.ExecutionContext.global
-
 import cats.effect.IO
 import cats.effect.Resource
 
@@ -91,14 +93,14 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
 class GitHubSuite extends munit.HttpSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
   override val baseUri: Uri = uri"https://api.github.com"
 
@@ -140,22 +142,20 @@ object DummyHttpContainer {
 ```
 
 ```scala mdoc:silent
-import scala.concurrent.ExecutionContext.global
-
 import cats.effect.IO
 import cats.effect.Resource
 
 import org.http4s.dsl.io._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 
 class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
   // A dummy container definition using "briceburg/ping-pong" image
   override val containerDef = DummyHttpContainer.Def()
@@ -169,12 +169,21 @@ class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestCont
 }
 ```
 
-As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractors` list:
+As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractor` function:
 
 ```scala
-override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
-  super.http4sMUnitContainerUriExtractors ++
-    List(new ContainerUriExtractor({ case _: DummyHttpContainer => uri"http://localhost:80" }))
+override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
+  super.http4sMUnitContainerUriExtractor orElse {
+    case _: DummyHttpContainer => uri"http://localhost:80" 
+  }
+```
+
+or
+
+```scala
+override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
+  case _: DummyHttpContainer => uri"http://localhost:80" 
+}
 ```
 
 ## Other features

@@ -42,7 +42,7 @@ import org.http4s.client.Client
   * import org.http4s.Uri
   * import org.http4s.circe._
   * import org.http4s.client.Client
-  * import org.http4s.blaze.client.BlazeClientBuilder
+  * import org.http4s.ember.client.EmberClientBuilder
   * import org.http4s.client.dsl.io._
   * import org.http4s.syntax.all._
   *

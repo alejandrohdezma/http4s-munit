@@ -23,19 +23,6 @@ template: |
   ## What's changed
 
   $CHANGES
-
-  ## Contributors to this release
-
-  $CONTRIBUTORS
-replacers:
-  - search: '/(?:and )?@dependabot-preview(?:\[bot\])?,?/g'
-    replace: ""
-  - search: '/(?:and )?@dependabot(?:\[bot\])?,?/g'
-    replace: ""
-  - search: '/(?:and )?@scala-steward(?:\[bot\])?,?/g'
-    replace: ""
-  - search: '/(?:and )?@alejandrohdezma-steward(?:\[bot\])?,?/g'
-    replace: ""
 autolabeler:
   - label: "enhancement"
     branch:
@@ -68,5 +55,7 @@ autolabeler:
     branch:
       - '/update\/.+/'
   - label: "build"
+    branch:
+      - '/build\/.*/'
     files:
       - "project/**"

@@ -18,28 +18,28 @@ package munit
 
 import cats.effect.IO
 import cats.effect.Resource
+import cats.effect.SyncIO
 
-import io.circe.Json
-import org.http4s.Method.GET
-import org.http4s.Uri
-import org.http4s.circe._
-import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
+import org.http4s.Header
+import org.http4s.Response
+import org.typelevel.ci._
 
-class HttpSuiteSuite extends HttpSuite {
+class HeaderInterpolatorSuite extends Http4sSuite[String] {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+  override def http4sMUnitNameCreator(
+      request: String,
+      followingRequests: List[String],
+      testOptions: TestOptions,
+      config: Http4sMUnitConfig
+  ): String = fail("This should no be called")
 
-  override def baseUri(): Uri = uri"https://api.github.com"
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[String => Resource[IO, Response[IO]]]] =
+    fail("This should no be called")
 
-  test(GET(uri"users/gutiory")) { response =>
-    assertEquals(response.status.code, 200)
+  test("header interpolator creates a valid raw header") {
+    val header = ci"my-header" := "my-value"
 
-    val result = response.as[Json].map(_.hcursor.get[String]("login"))
-
-    assertIO(result, Right("gutiory"))
+    assertEquals(header, Header.Raw(ci"my-header", "my-value"))
   }
 
 }

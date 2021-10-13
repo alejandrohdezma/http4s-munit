@@ -23,7 +23,9 @@ import cats.syntax.all._
 
 import fs2.Stream
 import io.circe.parser.parse
+import org.http4s.Header
 import org.http4s.Response
+import org.typelevel.ci.CIString
 
 /** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
   *
@@ -109,6 +111,13 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite {
     * behaviour of a suite.
     */
   def http4sMUnitFunFixture: SyncIO[FunFixture[Request => Resource[IO, Response[IO]]]]
+
+  implicit final class CiStringHeaderOps(ci: CIString) {
+
+    /** Creates a `Header.Raw` value from a case-insensitive string. */
+    def :=(value: String): Header.Raw = Header.Raw(ci, value)
+
+  }
 
   case class Http4sMUnitTestCreator(
       request: Request,
