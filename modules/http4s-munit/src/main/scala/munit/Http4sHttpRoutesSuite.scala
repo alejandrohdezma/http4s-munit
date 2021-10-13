@@ -28,8 +28,7 @@ import org.http4s.syntax.all._
 
 /** Base class for suites testing `HttpRoutes`.
   *
-  * To use this class you'll need to provide the routes being tested by
-  * overriding `routes`.
+  * To use this class you'll need to provide the routes being tested by overriding `routes`.
   *
   * @example
   * {{{
@@ -42,76 +41,62 @@ import org.http4s.syntax.all._
   *
   * class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite[String] {
   *
-  *  override val routes: HttpRoutes[IO] = HttpRoutes.of {
-  *    case GET -> Root / "hello" => Ok("Hello!")
-  *  }
+  *   override val routes: HttpRoutes[IO] = HttpRoutes.of {
+  *     case GET -> Root / "hello" => Ok("Hello!")
+  *   }
   *
-  *  test(GET(uri"hello")) { response =>
-  *    assertIO(response.as[String], "Hello!")
-  *  }
+  *   test(GET(uri"hello")) { response =>
+  *     assertIO(response.as[String], "Hello!")
+  *   }
   *
   * }
   * }}}
   *
-  * @author Alejandro Hernández
-  * @author José Gutiérrez
+  * @author
+  *   Alejandro Hernández
+  * @author
+  *   José Gutiérrez
   */
-abstract class Http4sHttpRoutesSuite extends Http4sSuite[Unit] {
+abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
   /** The HTTP routes being tested */
   val routes: HttpRoutes[IO]
 
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, Unit] => Resource[IO, Response[IO]]]] =
-    SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req.req).to[Resource[IO, *]], _ => ()))
+  /** @inheritdoc */
+  override def http4sMUnitNameCreator(
+      request: Request[IO],
+      followingRequests: List[String],
+      testOptions: TestOptions,
+      config: Http4sMUnitConfig
+  ): String =
+    Http4sMUnitDefaults.http4sMUnitNameCreator(ContextRequest((), request), followingRequests, testOptions, config)
 
-  implicit class Http4sMUnitTestCreatorOps(private val testCreator: Http4sMUnitTestCreator) {
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+    SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
 
-    /** Provide a new request created from the response of the previous request. The
-      * alias entered as parameter will be used to construct the test's name.
-      *
-      * If this is the last `andThen` call, the response provided to the test will be
-      * the one obtained from executing this request
-      */
-    def andThen(alias: String)(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator =
-      testCreator.copy(followingRequests =
-        testCreator.followingRequests :+ ((alias, f.andThen(_.map(ContextRequest((), _)))))
-      )
-
-    /** Provide a new request created from the response of the previous request.
-      *
-      * If this is the last `andThen` call, the response provided to the test will be
-      * the one obtained from executing this request
-      */
-    def andThen(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator = andThen("")(f)
-
-  }
-
-  /** Declares a test for the provided request. That request will be executed using
-    * the routes provided in `routes`.
+  /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *
     * @example
     * {{{
     * test(GET(uri"users" / 42)) { response =>
-    *    // test body
+    *     // test body
     * }
     * }}}
     *
     * @example
     * {{{
     * test(POST(json, uri"users")).alias("Create a new user") { response =>
-    *    // test body
+    *     // test body
     * }
     * }}}
     *
     * @example
     * {{{
     * test(GET(uri"users" / 42)).flaky { response =>
-    *    // test body
+    *     // test body
     * }
     * }}}
     */
-  def test(request: IO[Request[IO]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(
-    ContextRequest((), request.unsafeRunSync())
-  )
+  def test(request: IO[Request[IO]]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request.unsafeRunSync())
 
 }

@@ -23,7 +23,6 @@ import cats.effect.IO
 import sbt.testing.EventHandler
 import sbt.testing.TaskDef
 
-import mouse.ignore
 import org.http4s.HttpRoutes
 import org.http4s.Response
 import org.http4s.client.dsl.io._
@@ -32,9 +31,8 @@ import org.http4s.syntax.all._
 
 /** This suite ensures that the logs outputed by this library are correct.
   *
-  * For this we create some dummy suites in the suite's companion object
-  * (so they are not launched), execute them in a controlled runner, get
-  * its output, and compare it against an expected one.
+  * For this we create some dummy suites in the suite's companion object (so they are not launched), execute them in a
+  * controlled runner, get its output, and compare it against an expected one.
   */
 class LogsSuite extends FunSuite {
 
@@ -112,16 +110,16 @@ class LogsSuite extends FunSuite {
 
     val stringBuilder = new StringBuilder()
 
-    val eventHandler: EventHandler = event =>
-      ignore {
-        stringBuilder
-          .append("==> ")
-          .append(event.status())
-          .append(" ")
-          .append(event.fullyQualifiedName())
-          .append(if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
-          .append("\n")
-      }
+    val eventHandler: EventHandler = event => {
+      stringBuilder
+        .append("==> ")
+        .append(event.status())
+        .append(" ")
+        .append(event.fullyQualifiedName())
+        .append(if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
+        .append("\n")
+      ()
+    }
 
     tasks.foreach(_.execute(eventHandler, Array()))
 
@@ -152,11 +150,16 @@ object LogsSuite {
 
     test(GET(uri"posts" / "1")).alias("get first post")(_ => ())
 
-    test(GET(uri"posts" / "1")).alias("get first post").andThen("second post")(_ => GET(uri"posts" / "2"))(_ => ())
+    test(GET(uri"posts" / "1"))
+      .alias("get first post")
+      .andThen("second post")(_ => GET(uri"posts" / "2"))(_ => ())
 
-    test(GET(uri"posts" / "1")).alias("get 1st post and 2nd secuentially").andThen(_ => GET(uri"posts" / "2"))(_ => ())
+    test(GET(uri"posts" / "1"))
+      .alias("get 1st post and 2nd secuentially")
+      .andThen(_ => GET(uri"posts" / "2"))(_ => ())
 
-    test(GET(uri"posts" / "1")).andThen("get first and second posts secuentially")(_ => GET(uri"posts" / "2"))(_ => ())
+    test(GET(uri"posts" / "1"))
+      .andThen("get first and second posts secuentially")(_ => GET(uri"posts" / "2"))(_ => ())
 
   }
 

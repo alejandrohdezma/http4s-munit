@@ -99,4 +99,5 @@ class ParallelSuite extends Http4sHttpRoutesSuite {
       assertEquals(successes.get(), 14)
     }
   }
+
 }
