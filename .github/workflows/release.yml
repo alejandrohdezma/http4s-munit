@@ -2,11 +2,15 @@
 # It is automatically updated after every release of https://github.com/alejandrohdezma/sbt-ci
 # If you want to suggest a change, please open a PR or issue in that repository
 
+# Don't edit this file!
+# It is automatically updated after every release of https://github.com/alejandrohdezma/sbt-ci
+# If you want to suggest a change, please open a PR or issue in that repository
+
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: [v*]
   workflow_dispatch:
 
 jobs:
@@ -35,17 +39,15 @@ jobs:
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
   release:
-    if: github.event_name == 'release'
-    name: Release a new version of the artifact and update documentation
+    if: github.event_name == 'push'
+    name: Release a new version of the artifact
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout project
-        uses: actions/checkout@v2.3.4
+      - name: Checkout project (current ref)
+        uses: actions/checkout@v2
         with:
+          fetch-depth: 0
           token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-          ref: main
-      - name: Fetch tags
-        run: git fetch --prune --unshallow --tags
       - name: Enable Coursier cache
         uses: coursier/cache-action@v6
       - name: Setup Coursier
@@ -61,6 +63,19 @@ jobs:
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+  update_documentation:
+    if: github.event_name == 'push'
+    name: Updates documentation
+    runs-on: ubuntu-latest
+    needs: [release]
+    steps:
+      - name: Checkout project (main branch)
+        uses: actions/checkout@v2
+        with:
+          ref: main
+          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
+      - name: Fetch tags
+        run: git fetch --prune --unshallow --tags
       - name: Generate documentation
         run: sbt ci-docs
         env:
