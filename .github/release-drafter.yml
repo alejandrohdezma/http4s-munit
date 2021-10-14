@@ -6,56 +6,68 @@ name-template: "v$NEXT_PATCH_VERSION"
 tag-template: "v$NEXT_PATCH_VERSION"
 categories:
   - title: "⚠️ Breaking changes"
-    label: "breaking-change"
+    label: ":warning: breaking"
   - title: "🚀 Features"
-    label: "enhancement"
+    label: ":rocket: feature"
   - title: "📘 Documentation"
-    label: "documentation"
+    label: ":blue_book: documentation"
   - title: "🐛 Bug Fixes"
-    label: "bug"
+    label: ":beetle: bug"
   - title: "📈 Dependency updates"
-    labels:
-      - "dependency-update"
-      - "scala-steward"
+    label: ":chart_with_upwards_trend: dependency-update"
 exclude-labels:
-  - 'build'
+  - "build"
 template: |
   ## What's changed
 
   $CHANGES
 autolabeler:
-  - label: "enhancement"
+  - label: ":rocket: feature"
     branch:
-      - '/enhancement\/.+/'
-      - '/feature\/.+/'
-  - label: "documentation"
+      - "/enhancement\/.+/"
+      - "/feature\/.+/"
+      - "/feat\/.+/"
+  - label: ":blue_book: documentation"
     files:
       - "*.md"
     branch:
-      - '/docs\/.+/'
-      - '/doc\/.+/'
-  - label: "breaking-change"
+      - "/docs\/.+/"
+      - "/documentation\/.+/"
+      - "/doc\/.+/"
+  - label: ":warning: breaking"
     branch:
-      - '/breaking\/.+/'
-      - '/break\/.+/'
-  - label: "bug"
+      - "/breaking\/.+/"
+      - "/break\/.+/"
+  - label: ":beetle: bug"
     branch:
-      - '/bug\/.+/'
-      - '/fix\/.+/'
-  - label: "tests"
+      - "/bug\/.+/"
+      - "/fix\/.+/"
+  - label: ":lipstick: style"
     branch:
-      - '/test\/.+/'
-      - '/tests\/.+/'
-  - label: "dependency-update"
+      - "/style\/.+/"
+      - "/format\/.+/"
+  - label: ":package: refactor"
     branch:
-      - '/dep\/.+/'
-      - '/dependency\/.+/'
-      - '/dependency-update\/.+/'
-  - label: "scala-steward"
+      - "/refactor\/.+/"
+  - label: ":broom: cleaning"
     branch:
-      - '/update\/.+/'
-  - label: "build"
-    branch:
-      - '/build\/.*/'
+      - "/remove\/.+/"
+      - "/clean\/.+/"
+  - label: ":wrench: build"
     files:
       - "project/**"
+      - "build.sbt"
+    branch:
+      - "/build\/.+/"
+  - label: ":test_tube: test"
+    branch:
+      - "/test\/.+/"
+      - "/tests\/.+/"
+      - "/testing\/.+/"
+  - label: ":chart_with_upwards_trend: dependency-update"
+    branch:
+      - "/update\/.+/"
+      - "/dep\/.+/"
+      - "/dependency\/.+/"
+      - "/dependency-update\/.+/"
+      - "/develop"
