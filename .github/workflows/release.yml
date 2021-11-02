@@ -10,74 +10,50 @@ on:
   workflow_dispatch:
 
 jobs:
-  release-snapshot:
-    if: github.event_name == 'workflow_dispatch'
-    name: Release a new snapshot version of the artifact
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout project
-        uses: actions/checkout@v2.3.4
-        with:
-          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-      - name: Enable Coursier cache
-        uses: coursier/cache-action@v6
-      - name: Setup Coursier
-        uses: laughedelic/coursier-setup@v1
-        with:
-          jvm: adopt:1.8
-          apps: sbt
-      - name: Release new version
-        run: sbt ci-publish
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
-          PGP_SECRET: ${{ secrets.PGP_SECRET }}
-          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
-          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
   release:
-    if: github.event_name == 'push'
     name: Release a new version of the artifact
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout project (current ref)
-        uses: actions/checkout@v2
+      - name: Checkout project
+        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
         with:
           fetch-depth: 0
-          token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-      - name: Enable Coursier cache
-        uses: coursier/cache-action@v6
-      - name: Setup Coursier
-        uses: laughedelic/coursier-setup@v1
+
+      - name: Run `sbt ci-publish`
+        uses: alejandrohdezma/actions/scala@v1
         with:
           jvm: adopt:1.8
-          apps: sbt
-      - name: Release new version
-        run: sbt ci-publish
+          task: ci-publish
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PGP_PASSPHRASE: ${{ secrets.PGP_PASSPHRASE }}
           PGP_SECRET: ${{ secrets.PGP_SECRET }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
-  update_documentation:
-    if: github.event_name == 'push'
-    name: Updates documentation
-    runs-on: ubuntu-latest
+
+  documentation:
     needs: [release]
+    name: Updates documentation after latest release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout project (main branch)
-        uses: actions/checkout@v2
+      - name: Checkout project
+        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
         with:
+          fetch-depth: 0
           ref: main
           token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-      - name: Fetch tags
-        run: git fetch --prune --unshallow --tags
-      - name: Generate documentation
-        run: sbt ci-docs
+
+      - name: Run `sbt ci-docs`
+        uses: alejandrohdezma/actions/scala@v1
+        with:
+          jvm: openjdk:1.17
+          task: ci-docs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GIT_DEPLOY_KEY: ${{ secrets.GIT_DEPLOY_KEY }}
-      - name: Push changes
-        uses: stefanzweifel/git-auto-commit-action@v4.12.0
+
+      - name: Commit changes by `sbt ci-docs`
+        uses: alejandrohdezma/actions/commit-and-push@v1
         with:
-          commit_message: "Update documentation [skip ci]"
+          message: Run `sbt ci-docs` [skip ci]
+          branch: main
