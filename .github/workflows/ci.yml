@@ -8,107 +8,85 @@ on:
   push:
     branches: [main]
   pull_request:
+    types: [opened, reopened, labeled, unlabeled, synchronize]
 
 jobs:
-  update_release_draft:
-    name: Drafts/updates the next repository release and update PR labels
-    if: |
-      github.event_name == 'push' ||
-      (
-        github.event_name == 'pull_request' && 
-        github.event.pull_request.head.repo.full_name == github.repository
-      )
-    runs-on: ubuntu-latest
-    steps:
-      - name: Get the GitHub App installation token
-        uses: jnwng/github-app-installation-token-action@v2
-        id: installation_token
-        with:
-          appId: 104853
-          installationId: 15336457
-          privateKey: ${{ secrets.SCALA_STEWARD_APP_PRIVATE_KEY }}
-      - uses: release-drafter/release-drafter@v5
-        env:
-          GITHUB_TOKEN: ${{ steps.installation_token.outputs.token }}
-  update-prs:
-    name: Update outdated PRs to latest main
+  auto-update-outdated-prs-to-latest-main:
+    name: Update outdated PRs to latest `main`
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
       - name: Get the GitHub App installation token
-        uses: jnwng/github-app-installation-token-action@v2
-        id: installation_token
+        uses: alejandrohdezma/actions/github-app-token@v1
+        id: github_app
         with:
-          appId: 104853
-          installationId: 15336457
-          privateKey: ${{ secrets.SCALA_STEWARD_APP_PRIVATE_KEY }}
-      - name: Automatically update PR
-        uses: adRise/update-pr-branch@v0.5.1
+          token: ${{ secrets.GH_APP_TOKEN }}
+
+      - name: Update outdated PRs to latest `main`
+        uses: alejandrohdezma/actions/update-outdated-prs@v1
         with:
-          token: ${{ steps.installation_token.outputs.token }}
-          base: "main"
-          required_approval_count: 1
-          require_passed_checks: false
-  scala-steward:
+          github-token: ${{ steps.github_app.outputs.token }}
+
+  labeler:
+    if: |
+      github.event_name == 'pull_request' && github.event.pull_request.state == 'OPEN' &&
+        github.actor != 'dependabot[bot]'
+    name: Labeler
     runs-on: ubuntu-latest
-    name: "Process Scala Steward PRs: auto-approves, enable auto-merge..."
-    if: |
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.event.pull_request.user.login == 'alejandrohdezma-steward[bot]'
-    outputs:
-      changes_detected: ${{ steps.push.outputs.changes_detected }}
     steps:
-      - name: Get the GitHub App installation token
-        uses: jnwng/github-app-installation-token-action@v2
-        id: installation_token
-        with:
-          appId: 104853
-          installationId: 15336457
-          privateKey: ${{ secrets.SCALA_STEWARD_APP_PRIVATE_KEY }}
-      - name: Checkout project
-        uses: actions/checkout@v2.3.4
-        with:
-          token: ${{ steps.installation_token.outputs.token }}
-          ref: ${{ github.event.pull_request.head.ref }}
-      - name: Enable Coursier cache
-        uses: coursier/cache-action@v6
-      - name: Setup Coursier
-        uses: laughedelic/coursier-setup@v1
-        with:
-          jvm: adopt:1.11
-          apps: sbt
-      - name: Check if `.github/auto_assign.yml` exists
-        id: check_files
-        uses: andstor/file-existence-action@v1
-        with:
-          files: ".github/auto_assign.yml"
-      - name: Add Pull Request Reviewer
-        if: steps.check_files.outputs.files_exists == 'true'
-        uses: kentaro-m/auto-assign-action@v1.2.0
-        with:
-          repo-token: ${{ steps.installation_token.outputs.token }}
-      - name: Enable auto-merge for this PR
-        uses: alexwilson/enable-github-automerge-action@main
-        with:
-          github-token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-          merge-method: "MERGE"
-      - name: Auto-approve Scala Steward PRs
-        uses: hmarr/auto-approve-action@v2
-        with:
-          github-token: "${{ secrets.ADMIN_GITHUB_TOKEN }}"
-      - run: sbt generateCiFiles fix || sbt "generateCiFiles; scalafmtAll; scalafmtSbt" || true
-      - name: Push changes
-        id: push
-        uses: stefanzweifel/git-auto-commit-action@v4.12.0
-        with:
-          commit_message: Regenerate files with `sbt generateCiFiles fix`
-  test:
-    needs: [scala-steward]
+      - name: Update & check PR labels
+        uses: alejandrohdezma/actions/labeler@v1
+
+  ci-steward:
     if: |
-      always() && 
-      github.event_name == 'pull_request' &&
-      needs.scala-steward.outputs.changes_detected != 'true'
+      github.event_name == 'pull_request' && github.event.pull_request.state == 'OPEN' && 
+        github.event.pull_request.head.repo.full_name == github.repository &&
+        github.event.pull_request.user.login == 'alejandrohdezma-steward[bot]'
+    name: (Scala Steward) Enable auto-merge, run `sbt fix`...
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
+
+      - name: Get the GitHub App installation token
+        uses: alejandrohdezma/actions/github-app-token@v1
+        id: github_app
+        with:
+          token: ${{ secrets.GH_APP_TOKEN }}
+
+      - name: Enable auto-merge for this PR
+        run: gh pr merge --auto --merge ${{github.event.pull_request.number}}
+        env:
+          GITHUB_TOKEN: ${{ steps.github_app.outputs.token }}
+
+      - name: Run `sbt generateCiFiles`
+        uses: alejandrohdezma/actions/scala@v1
+        with:
+          jvm: openjdk:1.17
+          task: generateCiFiles
+
+      - name: Commit changes by `sbt generateCiFiles`
+        uses: alejandrohdezma/actions/commit-and-push@v1
+        with:
+          message: Run `sbt generateCiFiles`
+
+      - name: Run `sbt fix`
+        uses: alejandrohdezma/actions/scala@v1
+        with:
+          jvm: openjdk:1.17
+          task: fix
+
+      - name: Commit changes by `sbt fix`
+        uses: alejandrohdezma/actions/commit-and-push@v1
+        with:
+          message: Run `sbt fix`
+
+  test:
+    needs: [labeler, ci-steward]
+    if: |
+      always() && !contains(needs.*.result, 'failure') && github.event_name == 'pull_request' &&
+        github.event.pull_request.state == 'OPEN' &&
+        github.actor != 'dependabot[bot]'
     name: Run "sbt ci-test" on JDK ${{ matrix.jdk }}
     runs-on: ubuntu-latest
     strategy:
@@ -116,25 +94,16 @@ jobs:
       matrix:
         jdk:
           - adopt:1.8
-          - adopt:1.11
-          - adopt:1.15
+          - openjdk:1.11
+          - openjdk:1.17
     steps:
       - name: Checkout project
-        uses: actions/checkout@v2.3.4
-      - name: Enable Coursier cache
-        uses: coursier/cache-action@v6
-      - name: Setup Coursier
-        uses: laughedelic/coursier-setup@v1
+        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
+        with:
+          ref: ${{ github.head_ref }}
+
+      - name: Run `sbt ci-test` on ${{ matrix.jdk }}
+        uses: alejandrohdezma/actions/scala@v1
         with:
           jvm: ${{ matrix.jdk }}
-          apps: sbt
-      - name: Run checks (non-fork)
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        run: sbt ci-test
-        env:
-          GITHUB_TOKEN: ${{ secrets.ADMIN_GITHUB_TOKEN }}
-      - name: Run checks (fork)
-        if: github.event.pull_request.head.repo.full_name != github.repository
-        run: sbt ci-test
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          task: ci-test
