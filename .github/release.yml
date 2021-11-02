@@ -1,0 +1,26 @@
+# Don't edit this file!
+# It is automatically updated after every release of https://github.com/alejandrohdezma/sbt-ci
+# If you want to suggest a change, please open a PR or issue in that repository
+
+changelog:
+  exclude:
+    labels:
+      - ":chart_with_upwards_trend: dependency-update"
+    authors:
+      - alejandrohdezma-steward
+  categories:
+    - title: "⚠️ Breaking changes"
+      labels:
+        - ":warning: breaking"
+    - title: "🚀 New features"
+      labels:
+        - ":rocket: feature"
+    - title: "📘 Documentation updates"
+      labels:
+        - ":blue_book: documentation"
+    - title: "🐛 Bug fixes"
+      labels:
+        - ":beetle: bug"
+    - title: Other Changes
+      labels:
+        - "*"
