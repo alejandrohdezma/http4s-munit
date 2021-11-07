@@ -34,8 +34,11 @@ jobs:
     name: Labeler
     runs-on: ubuntu-latest
     steps:
-      - name: Update & check PR labels
+      - name: Update PR labels
         uses: alejandrohdezma/actions/labeler@v1
+
+      - name: Check PR labels
+        uses: alejandrohdezma/actions/label-check@v1
 
   ci-steward:
     if: |
@@ -45,14 +48,16 @@ jobs:
     name: (Scala Steward) Enable auto-merge, run `sbt fix`...
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout project
-        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
-
       - name: Get the GitHub App installation token
         uses: alejandrohdezma/actions/github-app-token@v1
         id: github_app
         with:
           token: ${{ secrets.GH_APP_TOKEN }}
+
+      - name: Checkout project
+        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
+        with:
+          token: ${{ steps.github_app.outputs.token }}
 
       - name: Enable auto-merge for this PR
         run: gh pr merge --auto --merge ${{github.event.pull_request.number}}
