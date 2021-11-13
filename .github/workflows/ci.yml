@@ -99,7 +99,7 @@ jobs:
       matrix:
         jdk:
           - adopt:1.8
-          - openjdk:1.11
+          - adopt:1.11
           - openjdk:1.17
     steps:
       - name: Checkout project
