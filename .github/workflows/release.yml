@@ -19,6 +19,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Check latest tag follows semantic versioning
+        if: github.event_name == 'push' 
+        uses: alejandrohdezma/actions/check-semver-tag@v1
+
       - name: Run `sbt ci-publish`
         uses: alejandrohdezma/actions/scala@v1
         with:
