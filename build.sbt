@@ -1,5 +1,5 @@
-ThisBuild / scalaVersion       := "2.13.6"
-ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.6")
+ThisBuild / scalaVersion       := "2.13.7"
+ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.7")
 ThisBuild / organization       := "com.alejandrohdezma"
 ThisBuild / extraCollaborators += Collaborator.github("gutiory")
 ThisBuild / Test / testOptions += Tests.Argument(TestFrameworks.MUnit, "+l")
@@ -27,7 +27,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.22.7")
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-2" % "1.0.6")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.1")
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.6" % Test)
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.7" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.22.7" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.22.7" % Test)
   .settings(libraryDependencies += "org.typelevel" %% "mouse" % "1.0.4" % Test)
@@ -35,8 +35,8 @@ lazy val `http4s-munit` = module
 
 lazy val `http4s-munit-testcontainers` = module
   .dependsOn(`http4s-munit`)
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.8")
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.12")
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.22.7" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.22.7" % Test)
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.6" % Test)
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.7" % Test)
   .settings(libraryDependencies += "io.circe" %% "circe-generic" % "0.14.1" % Test)

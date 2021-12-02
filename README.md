@@ -9,7 +9,11 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % 0.7.0 % Test)
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.9.2" % Test) // if using http4s 0.23.x
+
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.8.1" % Test) // if using http4s 0.22.x
+
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.1" % Test) // if using http4s 0.21.x
 ```
 
 ## Usage
@@ -81,8 +85,6 @@ In the case you don't want to use static http4s routes, but a running HTTP serve
 this URI before making a call using a real http4s `Client` (that you'll have to provide using `http4sMUnitClient`).
 
 ```scala
-import scala.concurrent.ExecutionContext.global
-
 import cats.effect.IO
 import cats.effect.Resource
 
@@ -91,14 +93,14 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
 import org.http4s.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
 class GitHubSuite extends munit.HttpSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
   override val baseUri: Uri = uri"https://api.github.com"
 
@@ -118,32 +120,30 @@ class GitHubSuite extends munit.HttpSuite {
 The last of our suites can be used when you want to test a "live" container inside a [test-containers](https://github.com/testcontainers/testcontainers-scala) container. This suite lives in a different artifact, so if you want to use it, you'll need to add the following to your `build.sbt`:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.7.0 % Test)
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.9.2 % Test)
 ```
 
 It is similar to the previous suite (in fact it extends from it) but instead of a base URI we provide a container definition:
 
-
 ```scala
-import scala.concurrent.ExecutionContext.global
-
 import cats.effect.IO
 import cats.effect.Resource
 
 import org.http4s.dsl.io._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
 import org.http4s.client.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
+import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import org.testcontainers.containers.wait.strategy.Wait
 
-class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](global).resource
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
-  // A dummy container definition using "briceburg/ping-pong" image
-  override val containerDef = DummyHttpContainer.Def()
+  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
@@ -154,12 +154,21 @@ class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestCont
 }
 ```
 
-As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractors` list:
+As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractor` function:
 
 ```scala
-override def http4sMUnitContainerUriExtractors: List[ContainerUriExtractor] =
-  super.http4sMUnitContainerUriExtractors ++
-    List(new ContainerUriExtractor({ case _: DummyHttpContainer => uri"http://localhost:80" }))
+override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
+  super.http4sMUnitContainerUriExtractor orElse {
+    case _: GenericContainer => uri"http://localhost:80" 
+  }
+```
+
+or
+
+```scala
+override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
+  case _: GenericContainer => uri"http://localhost:80" 
+}
 ```
 
 ## Other features
@@ -315,6 +324,54 @@ Response body was:
 ```
 
 The body will be prettified using `http4sMUnitBodyPrettifier`, which, by default, will try to parse it as JSON and apply a code highlight if `munitAnsiColors` is `true`. If you want a different output or disabling body-prettifying just override this method.
+
+### Response clues
+
+Apart from the response body clues introduced in the previous section, `http4s-munit` also provides a simple way to transform a response into clues: the `response.clues` extension method.
+
+The output of this extension method can be tweaked by using the `http4sMUnitResponseClueCreator`.
+
+For example, this can be used on container suites to filter logs relevant to the current request (if your logs are JSON objects containing the request id):
+
+```scala
+import cats.effect.IO
+import cats.effect.Resource
+
+import org.http4s.dsl.io._
+import org.http4s.client.Client
+import org.http4s.client.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.syntax.all._
+import org.http4s.Response
+import org.typelevel.ci._
+
+import com.dimafeng.testcontainers.GenericContainer
+import com.dimafeng.testcontainers.munit.TestContainerForAll
+import org.testcontainers.containers.wait.strategy.Wait
+
+class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+
+  override def http4sMUnitResponseClueCreator(response: Response[IO]) = withContainers { container =>
+    val id = response.headers.get(ci"x-request-id").map(_.head.value)
+
+    // Here you will filter `container.logs` using the `id`
+    val logs = container.logs
+
+    clues(response, logs)
+  }
+
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+
+  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
+
+  test(GET(uri"ping", ci"X-Request-Id" := "1234")) { response =>
+    assertEquals(response.status.code, 200, response.clues)
+
+    assertIO(response.as[String], "pong", response.clues)
+  }
+
+}
+```
 
 [maven]: https://search.maven.org/search?q=g:%20com.alejandrohdezma%20AND%20a:http4s-munit_2.13
 [maven-badge]: https://maven-badges.herokuapp.com/maven-central/com.alejandrohdezma/http4s-munit_2.13/badge.svg?kill_cache=1
