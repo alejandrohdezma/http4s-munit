@@ -9,11 +9,11 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION@ % Test) // if using http4s 0.23.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION@" % Test) // if using http4s 0.23.x
 
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION_022x@ % Test) // if using http4s 0.22.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION_022x@" % Test) // if using http4s 0.22.x
 
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % @VERSION_021x@ % Test) // if using http4s 0.21.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION_021x@" % Test) // if using http4s 0.21.x
 ```
 
 ## Usage
@@ -125,23 +125,7 @@ libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 
 
 It is similar to the previous suite (in fact it extends from it) but instead of a base URI we provide a container definition:
 
-```scala mdoc:reset:invisible
-import com.dimafeng.testcontainers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
-
-@scala.annotation.nowarn
-final case class DummyHttpContainer(underlying: GenericContainer) extends GenericContainer(underlying)
-
-object DummyHttpContainer {
-
-  @scala.annotation.nowarn
-  final case class Def() extends GenericContainer.Def[DummyHttpContainer](
-    new DummyHttpContainer(GenericContainer(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80),  waitStrategy = Wait.forHttp("/ping")))
-  )
-}
-```
-
-```scala mdoc:silent
+```scala mdoc:reset:silent
 import cats.effect.IO
 import cats.effect.Resource
 
@@ -151,14 +135,15 @@ import org.http4s.client.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
+import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import org.testcontainers.containers.wait.strategy.Wait
 
-class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
   override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
-  // A dummy container definition using "briceburg/ping-pong" image
-  override val containerDef = DummyHttpContainer.Def()
+  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
@@ -174,7 +159,7 @@ As you can see in order to use this suite you'll need to select also one of the 
 ```scala
 override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
   super.http4sMUnitContainerUriExtractor orElse {
-    case _: DummyHttpContainer => uri"http://localhost:80" 
+    case _: GenericContainer => uri"http://localhost:80" 
   }
 ```
 
@@ -182,7 +167,7 @@ or
 
 ```scala
 override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
-  case _: DummyHttpContainer => uri"http://localhost:80" 
+  case _: GenericContainer => uri"http://localhost:80" 
 }
 ```
 
@@ -360,6 +345,53 @@ Response body was:
 ```
 
 The body will be prettified using `http4sMUnitBodyPrettifier`, which, by default, will try to parse it as JSON and apply a code highlight if `munitAnsiColors` is `true`. If you want a different output or disabling body-prettifying just override this method.
+
+### Response clues
+
+Apart from the response body clues introduced in the previous section, `http4s-munit` also provides a simple way to transform a response into clues: the `response.clues` extension method.
+
+The output of this extension method can be tweaked by using the `http4sMUnitResponseClueCreator`.
+
+For example, this can be used on container suites to filter logs relevant to the current request (if your logs are JSON objects containing the request id):
+
+```scala mdoc:silent
+import cats.effect.IO
+import cats.effect.Resource
+
+import org.http4s.dsl.io._
+import org.http4s.client.Client
+import org.http4s.client.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.syntax.all._
+import org.http4s.Response
+
+import com.dimafeng.testcontainers.GenericContainer
+import com.dimafeng.testcontainers.munit.TestContainerForAll
+import org.testcontainers.containers.wait.strategy.Wait
+
+class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+
+  override def http4sMUnitResponseClueCreator(response: Response[IO]) = withContainers { container =>
+    val id = response.headers.get("x-request-id".ci).map(_.value)
+
+    // Here you will filter `container.logs` using the `id`
+    val logs = container.logs
+
+    clues(response, logs)
+  }
+
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+
+  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
+
+  test(GET(uri"ping", "X-Request-Id".ci := "1234")) { response =>
+    assertEquals(response.status.code, 200, response.clues)
+
+    assertIO(response.as[String], "pong", response.clues)
+  }
+
+}
+```
 
 [maven]: https://search.maven.org/search?q=g:%20com.alejandrohdezma%20AND%20a:http4s-munit_2.13
 [maven-badge]: https://maven-badges.herokuapp.com/maven-central/com.alejandrohdezma/http4s-munit_2.13/badge.svg?kill_cache=1

@@ -35,11 +35,11 @@ class HttpSuiteSuite extends HttpSuite {
   override def baseUri(): Uri = uri"https://api.github.com"
 
   test(GET(uri"users/gutiory")) { response =>
-    assertEquals(response.status.code, 200)
+    assertEquals(response.status.code, 200, response.clues)
 
     val result = response.as[Json].map(_.hcursor.get[String]("login"))
 
-    assertIO(result, Right("gutiory"))
+    assertIO(result, Right("gutiory"), response.clues)
   }
 
 }

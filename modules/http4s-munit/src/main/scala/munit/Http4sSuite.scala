@@ -80,6 +80,28 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite {
       config: Http4sMUnitConfig
   ): String
 
+  /** Returns the response as suite clues.
+    *
+    * This method is then used by `response.clues` extension method.
+    *
+    * @param response
+    *   the response to convert to `Clues`
+    * @return
+    *   the clues extracted from the response
+    */
+  def http4sMUnitResponseClueCreator(response: Response[IO]): Clues =
+    clues(response.headers.show, response.status.show)
+
+  implicit class ResponseCluesOps(private val response: Response[IO]) {
+
+    /** Transform a response into suite clues
+      *
+      * The output of this extension method can be controlled with `http4sMUnitResponseClueCreator`.
+      */
+    def clues: Clues = http4sMUnitResponseClueCreator(response)
+
+  }
+
   /** Allows prettifing the response's body before outputting it to logs.
     *
     * By default it will try to parse it as JSON and apply a code highlight if `munitAnsiColors` is `true`.
