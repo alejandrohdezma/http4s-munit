@@ -20,6 +20,7 @@ import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all._
 
+import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 import io.circe.Json
 import io.circe.generic.auto._
@@ -31,6 +32,8 @@ import org.http4s.client.Client
 import org.http4s.client.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
+import org.testcontainers.containers.BindMode
+import org.testcontainers.containers.wait.strategy.Wait
 
 class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContainerForAll {
 
@@ -39,7 +42,12 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContai
 
   override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
-  override val containerDef = DummyHttpContainer.Def()
+  override val containerDef = GenericContainer.Def(
+    dockerImage = "clue/json-server",
+    exposedPorts = Seq(80),
+    classpathResourceMapping = Seq(("db.json", "/data/db.json", BindMode.READ_ONLY)),
+    waitStrategy = Wait.forHttp("/posts")
+  )
 
   case class Post(id: Int)
 

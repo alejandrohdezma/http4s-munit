@@ -125,23 +125,7 @@ libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 
 
 It is similar to the previous suite (in fact it extends from it) but instead of a base URI we provide a container definition:
 
-```scala mdoc:reset:invisible
-import com.dimafeng.testcontainers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
-
-@scala.annotation.nowarn
-final case class DummyHttpContainer(underlying: GenericContainer) extends GenericContainer(underlying)
-
-object DummyHttpContainer {
-
-  @scala.annotation.nowarn
-  final case class Def() extends GenericContainer.Def[DummyHttpContainer](
-    new DummyHttpContainer(GenericContainer(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80),  waitStrategy = Wait.forHttp("/ping")))
-  )
-}
-```
-
-```scala mdoc:silent
+```scala mdoc:reset:silent
 import cats.effect.IO
 import cats.effect.Resource
 
@@ -151,14 +135,15 @@ import org.http4s.client.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
+import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import org.testcontainers.containers.wait.strategy.Wait
 
-class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
   override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
-  // A dummy container definition using "briceburg/ping-pong" image
-  override val containerDef = DummyHttpContainer.Def()
+  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
@@ -174,7 +159,7 @@ As you can see in order to use this suite you'll need to select also one of the 
 ```scala
 override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
   super.http4sMUnitContainerUriExtractor orElse {
-    case _: DummyHttpContainer => uri"http://localhost:80" 
+    case _: GenericContainer => uri"http://localhost:80" 
   }
 ```
 
@@ -182,7 +167,7 @@ or
 
 ```scala
 override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
-  case _: DummyHttpContainer => uri"http://localhost:80" 
+  case _: GenericContainer => uri"http://localhost:80" 
 }
 ```
 
@@ -369,22 +354,6 @@ The output of this extension method can be tweaked by using the `http4sMUnitResp
 
 For example, this can be used on container suites to filter logs relevant to the current request (if your logs are JSON objects containing the request id):
 
-```scala mdoc:reset:invisible
-import com.dimafeng.testcontainers.GenericContainer
-import org.testcontainers.containers.wait.strategy.Wait
-
-@scala.annotation.nowarn
-final case class DummyHttpContainer(underlying: GenericContainer) extends GenericContainer(underlying)
-
-object DummyHttpContainer {
-
-  @scala.annotation.nowarn
-  final case class Def() extends GenericContainer.Def[DummyHttpContainer](
-    new DummyHttpContainer(GenericContainer(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80),  waitStrategy = Wait.forHttp("/ping")))
-  )
-}
-```
-
 ```scala mdoc:silent
 import cats.effect.IO
 import cats.effect.Resource
@@ -397,9 +366,11 @@ import org.http4s.syntax.all._
 import org.http4s.Response
 import org.typelevel.ci._
 
+import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
+import org.testcontainers.containers.wait.strategy.Wait
 
-class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = withContainers { container =>
     val id = response.headers.get(ci"x-request-id").map(_.head.value)
@@ -412,8 +383,7 @@ class DummyHttpContainerSuite extends munit.HttpFromContainerSuite with TestCont
 
   override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
 
-  // A dummy container definition using "briceburg/ping-pong" image
-  override val containerDef = DummyHttpContainer.Def()
+  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
 
   test(GET(uri"ping", ci"X-Request-Id" := "1234")) { response =>
     assertEquals(response.status.code, 200, response.clues)
