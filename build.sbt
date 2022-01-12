@@ -1,5 +1,5 @@
-ThisBuild / scalaVersion       := "2.13.7"
-ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.7")
+ThisBuild / scalaVersion       := "2.13.8"
+ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.8")
 ThisBuild / organization       := "com.alejandrohdezma"
 ThisBuild / extraCollaborators += Collaborator.github("gutiory")
 ThisBuild / Test / testOptions += Tests.Argument(TestFrameworks.MUnit, "+l")
