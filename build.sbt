@@ -23,19 +23,19 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.7")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.7")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.8")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.8")
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.1")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.7" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.7" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.8" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.8" % Test)
   .settings(addCompilerPlugin(("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full)))
 
 lazy val `http4s-munit-testcontainers` = module
   .dependsOn(`http4s-munit`)
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.39.12")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.7" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.7" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.8" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.8" % Test)
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.10" % Test)
   .settings(libraryDependencies += "io.circe" %% "circe-generic" % "0.14.1" % Test)
