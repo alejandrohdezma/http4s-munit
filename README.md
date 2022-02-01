@@ -13,7 +13,7 @@ libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.9.3" % Test)
 
 libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.8.3" % Test) // if using http4s 0.22.x
 
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.2" % Test) // if using http4s 0.21.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.3" % Test) // if using http4s 0.21.x
 ```
 
 ## Usage
