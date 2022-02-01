@@ -36,7 +36,7 @@ import org.http4s.syntax.all._
   * context's information in the test's name.
   *
   * @example
-  * {{{
+  *   {{{
   * import cats.effect.IO
   *
   * import org.http4s.AuthedRoutes
@@ -55,7 +55,7 @@ import org.http4s.syntax.all._
   *   }
   *
   * }
-  * }}}
+  *   }}}
   */
 abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
 
@@ -86,25 +86,25 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *
     * @example
-    * {{{
+    *   {{{
     * test(GET(uri"users" / 42).context("user-1")) { response =>
     *     // test body
     * }
-    * }}}
+    *   }}}
     *
     * @example
-    * {{{
+    *   {{{
     * test(POST(json, uri"users") -> "user-2").alias("Create a new user") { response =>
     *     // test body
     * }
-    * }}}
+    *   }}}
     *
     * @example
-    * {{{
+    *   {{{
     * test(GET(uri"users" / 42).context("user-3")).flaky { response =>
     *     // test body
     * }
-    * }}}
+    *   }}}
     */
   def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request)
 

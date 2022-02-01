@@ -29,7 +29,7 @@ import org.http4s.Uri
   * `http4sMUnitContainerUriExtractor` list.
   *
   * @example
-  * {{{
+  *   {{{
   * import scala.concurrent.ExecutionContext.global
   *
   * import cats.effect.IO
@@ -69,7 +69,7 @@ import org.http4s.Uri
   *   }
   *
   * }
-  * }}}
+  *   }}}
   *
   * @author
   *   Alejandro Hernández
