@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,7 @@ import cats.effect.Resource
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.GenericContainer
+import com.dimafeng.testcontainers.GenericContainer.FileSystemBind
 import com.dimafeng.testcontainers.munit.TestContainerForAll
 import io.circe.Json
 import io.circe.generic.auto._
@@ -45,7 +46,7 @@ class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContai
   override val containerDef = GenericContainer.Def(
     dockerImage = "clue/json-server",
     exposedPorts = Seq(80),
-    classpathResourceMapping = Seq(("db.json", "/data/db.json", BindMode.READ_ONLY)),
+    classpathResourceMapping = Seq(FileSystemBind("db.json", "/data/db.json", BindMode.READ_ONLY)),
     waitStrategy = Wait.forHttp("/posts")
   )
 

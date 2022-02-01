@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ import org.http4s.client.Client
   * To use this class you'll need to provide the `Uri` of the remote container by overriding `baseUri`.
   *
   * @example
-  * {{{
+  *   {{{
   * import scala.concurrent.ExecutionContext.global
   *
   * import cats.effect.IO
@@ -61,7 +61,7 @@ import org.http4s.client.Client
   *   }
   *
   * }
-  * }}}
+  *   }}}
   *
   * @author
   *   Alejandro Hernández
@@ -95,25 +95,25 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
     * to the server indicated in `baseUri`.
     *
     * @example
-    * {{{
+    *   {{{
     * test(GET(uri"users" / 42)) { response =>
     *     // test body
     * }
-    * }}}
+    *   }}}
     *
     * @example
-    * {{{
+    *   {{{
     * test(POST(json, uri"users")).alias("Create a new user") { response =>
     *     // test body
     * }
-    * }}}
+    *   }}}
     *
     * @example
-    * {{{
+    *   {{{
     * test(GET(uri"users" / 42)).flaky { response =>
     *     // test body
     * }
-    * }}}
+    *   }}}
     */
   def test(request: IO[Request[IO]]) = Http4sMUnitTestCreator(request.unsafeRunSync())
 

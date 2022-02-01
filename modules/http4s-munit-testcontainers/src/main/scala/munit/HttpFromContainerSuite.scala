@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2021 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,7 @@ import org.http4s.Uri
   * `http4sMUnitContainerUriExtractor` list.
   *
   * @example
-  * {{{
+  *   {{{
   * import scala.concurrent.ExecutionContext.global
   *
   * import cats.effect.IO
@@ -69,7 +69,7 @@ import org.http4s.Uri
   *   }
   *
   * }
-  * }}}
+  *   }}}
   *
   * @author
   *   Alejandro Hernández

@@ -9,11 +9,11 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.1" % Test) // if using http4s 0.23.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.9.3" % Test) // if using http4s 0.23.x
 
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.8.1" % Test) // if using http4s 0.22.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.8.2" % Test) // if using http4s 0.22.x
 
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.1" % Test) // if using http4s 0.21.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.2" % Test) // if using http4s 0.21.x
 ```
 
 ## Usage
@@ -120,7 +120,7 @@ class GitHubSuite extends munit.HttpSuite {
 The last of our suites can be used when you want to test a "live" container inside a [test-containers](https://github.com/testcontainers/testcontainers-scala) container. This suite lives in a different artifact, so if you want to use it, you'll need to add the following to your `build.sbt`:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.7.1 % Test)
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.9.3 % Test)
 ```
 
 It is similar to the previous suite (in fact it extends from it) but instead of a base URI we provide a container definition:
@@ -249,9 +249,9 @@ test(GET(uri"hello")).doNotRepeat { response =>
 Sometimes (mostly while using the `HttpSuite` or `HttpFromContainerSuite`) one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
 
 ```scala
-test(GET(uri"posts" +? ("number", 10)))
+test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
-    .andThen("delete it")(_.as[String].flatMap { id =>
+    .andThen("delete it")(_.as[String].map { id =>
       DELETE(uri"posts" / id)
     }) { response =>
       assertEquals(response.status.code, 204)
@@ -275,9 +275,9 @@ test(GET(uri"users")).alias("all users")
 test(GET(uri"users")).repeat(10).parallel(2)
 
 // GET -> posts?number=10 (look for the 10th post and delete it)
-test(GET(uri"posts" +? ("number", 10)))
+test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
-    .andThen("delete it")(_.as[String].flatMap { id => DELETE(uri"posts" / id) })
+    .andThen("delete it")(_.as[String].map { id => DELETE(uri"posts" / id) })
 ```
 
 ### Body in failed assertions
@@ -343,6 +343,7 @@ import org.http4s.client.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 import org.http4s.Response
+import org.typelevel.ci._
 
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.TestContainerForAll
@@ -351,7 +352,7 @@ import org.testcontainers.containers.wait.strategy.Wait
 class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = withContainers { container =>
-    val id = response.headers.get("x-request-id".ci).map(_.value)
+    val id = response.headers.get(ci"x-request-id").map(_.head.value)
 
     // Here you will filter `container.logs` using the `id`
     val logs = container.logs
@@ -363,7 +364,7 @@ class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestConta
 
   override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
 
-  test(GET(uri"ping", "X-Request-Id".ci := "1234")) { response =>
+  test(GET(uri"ping", ci"X-Request-Id" := "1234")) { response =>
     assertEquals(response.status.code, 200, response.clues)
 
     assertIO(response.as[String], "pong", response.clues)
