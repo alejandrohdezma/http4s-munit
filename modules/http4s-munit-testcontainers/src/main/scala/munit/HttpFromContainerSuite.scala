@@ -76,6 +76,7 @@ import org.http4s.Uri
   * @author
   *   José Gutiérrez
   */
+@deprecated("Use HttpSuite + fixtures instead", "http4s-munit-testcontainers 0.10.0")
 abstract class HttpFromContainerSuite extends HttpSuite with TestContainersSuite {
 
   override def baseUri(): Uri = withContainers { (containers: Containers) =>

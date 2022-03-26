@@ -16,6 +16,8 @@
 
 package munit
 
+import scala.annotation.nowarn
+
 import cats.effect.IO
 import cats.effect.Resource
 import cats.syntax.all._
@@ -36,6 +38,7 @@ import org.http4s.syntax.all._
 import org.testcontainers.containers.BindMode
 import org.testcontainers.containers.wait.strategy.Wait
 
+@nowarn
 class HttpFromContainerSuiteSuite extends HttpFromContainerSuite with TestContainerForAll {
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]): Clues =
