@@ -24,7 +24,6 @@ import org.http4s.ContextRequest
 import org.http4s.HttpRoutes
 import org.http4s.Request
 import org.http4s.Response
-import org.http4s.syntax.all._
 
 /** Base class for suites testing `HttpRoutes`.
   *
@@ -35,9 +34,6 @@ import org.http4s.syntax.all._
   * import cats.effect.IO
   *
   * import org.http4s.HttpRoutes
-  * import org.http4s.client.dsl.io._
-  * import org.http4s.dsl.io._
-  * import org.http4s.syntax.all._
   *
   * class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite[String] {
   *

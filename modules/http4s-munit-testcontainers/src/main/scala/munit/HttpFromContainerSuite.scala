@@ -39,11 +39,8 @@ import org.http4s.Uri
   * import com.dimafeng.testcontainers.GenericContainer
   * import com.dimafeng.testcontainers.munit.TestContainerForAll
   *
-  * import org.http4s.Method.GET
   * import org.http4s.client.Client
   * import org.http4s.ember.client.EmberClientBuilder
-  * import org.http4s.client.dsl.io._
-  * import org.http4s.syntax.all._
   *
   * import org.testcontainers.containers.wait.strategy.Wait
   *
