@@ -9,7 +9,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.9.3" % Test) // if using http4s 0.23.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.9.4" % Test) // if using http4s 0.23.x
 
 libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.8.3" % Test) // if using http4s 0.22.x
 
@@ -117,57 +117,73 @@ class GitHubSuite extends munit.HttpSuite {
 
 ### Testing an HTTP server running inside a container
 
-The last of our suites can be used when you want to test a "live" container inside a [test-containers](https://github.com/testcontainers/testcontainers-scala) container. This suite lives in a different artifact, so if you want to use it, you'll need to add the following to your `build.sbt`:
-
-```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit-testcontainers" % 0.9.3 % Test)
-```
-
-It is similar to the previous suite (in fact it extends from it) but instead of a base URI we provide a container definition:
+Since version `0.10.0` usage of `HttpFromContainerSuite` has been deprecated in favour of
+`HttpSuite` + `TestContainersFixtures` (available since `testcontainers-scala-munit` `0.40.3`):
 
 ```scala
 import cats.effect.IO
-import cats.effect.Resource
 
-import org.http4s.dsl.io._
-import org.http4s.client.Client
+import com.dimafeng.testcontainers.GenericContainer
+import com.dimafeng.testcontainers.munit.fixtures.TestContainersFixtures
+import io.circe.Json
+import org.http4s._
+import org.http4s.circe._
 import org.http4s.client.dsl.io._
+import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.syntax.all._
 
-import com.dimafeng.testcontainers.GenericContainer
-import com.dimafeng.testcontainers.munit.TestContainerForAll
-import org.testcontainers.containers.wait.strategy.Wait
+class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
 
-class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+  override def http4sMUnitClient = EmberClientBuilder.default[IO].build
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+  // There is also available `ForEachContainerFixture`
+  val container = ForAllContainerFixture {
+    GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
+  }
 
-  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
+  override def munitFixtures = List(container)
+
+  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container().mappedPort(80)}")
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
-
-    assertIO(response.as[String], "pong")
+    assertIOBoolean(response.as[Json].map(_.isObject))
   }
 
 }
 ```
 
-As you can see in order to use this suite you'll need to select also one of the two [test-containers](https://github.com/testcontainers/testcontainers-scala) specific suites: `TestContainersForAll` or `TestContainersForEach`. Lastly you'll need to ensure your container's URI is obtainable either by using the default extractor (which just uses `localhost:first-exposed-port`) or providing an specific one for your container by overriding the `http4sMUnitContainerUriExtractor` function:
+Or if you don't want to use container fixtures and you don't mind starting a container for each test:
 
 ```scala
-override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] =
-  super.http4sMUnitContainerUriExtractor orElse {
-    case _: GenericContainer => uri"http://localhost:80" 
+import cats.effect.IO
+import cats.effect.Resource
+import cats.syntax.all._
+
+import com.dimafeng.testcontainers.GenericContainer
+import io.circe.Json
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.client.dsl.io._
+import org.http4s.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.syntax.all._
+
+class TestContainersSuite extends munit.HttpSuite {
+
+  override def http4sMUnitClient =
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+
+  lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
+
+  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container.mappedPort(80)}")
+
+  test(GET(uri"ping")) { response =>
+    assertEquals(response.status.code, 200)
+    assertIOBoolean(response.as[Json].map(_.isObject))
   }
-```
 
-or
-
-```scala
-override def http4sMUnitContainerUriExtractor: PartialFunction[Containers, Uri] = {
-  case _: GenericContainer => uri"http://localhost:80" 
 }
 ```
 
@@ -336,38 +352,39 @@ For example, this can be used on container suites to filter logs relevant to the
 ```scala
 import cats.effect.IO
 import cats.effect.Resource
-
-import org.http4s.dsl.io._
-import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
-import org.http4s.Response
-import org.typelevel.ci._
+import cats.syntax.all._
 
 import com.dimafeng.testcontainers.GenericContainer
-import com.dimafeng.testcontainers.munit.TestContainerForAll
-import org.testcontainers.containers.wait.strategy.Wait
+import io.circe.Json
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.client.dsl.io._
+import org.http4s.dsl.io._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.syntax.all._
+import org.typelevel.ci._
 
-class PingPongContainerSuite extends munit.HttpFromContainerSuite with TestContainerForAll {
+class TestContainersSuite extends munit.HttpSuite {
 
-  override def http4sMUnitResponseClueCreator(response: Response[IO]) = withContainers { container =>
+  override def http4sMUnitClient =
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+
+  override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
     val id = response.headers.get(ci"x-request-id").map(_.head.value)
 
     // Here you will filter `container.logs` using the `id`
-    val logs = container.logs
+    val logs = container.logs.split("\n").filter(_.contains(id)).mkString("\n")
 
     clues(response, logs)
   }
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+  lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
 
-  override val containerDef = GenericContainer.Def(dockerImage = "briceburg/ping-pong", exposedPorts = Seq(80), waitStrategy = Wait.forHttp("/ping"))
+  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container.mappedPort(80)}")
 
-  test(GET(uri"ping", ci"X-Request-Id" := "1234")) { response =>
+  test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200, response.clues)
-
-    assertIO(response.as[String], "pong", response.clues)
+    assertIOBoolean(response.as[Json].map(_.isObject), response.clues)
   }
 
 }
