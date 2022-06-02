@@ -1,9 +1,9 @@
 ThisBuild / scalaVersion       := "2.13.8"
-ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.8")
+ThisBuild / crossScalaVersions := Seq("2.12.15", "2.13.8", "3.1.2")
 ThisBuild / organization       := "com.alejandrohdezma"
 ThisBuild / extraCollaborators += Collaborator.github("gutiory")
 
-addCommandAlias("ci-test", "fix --check; mdoc; +test")
+addCommandAlias("ci-test", "scalafmtCheckAll; mdoc; +test")
 addCommandAlias("ci-docs", "github; headerCreateAll; mdoc")
 addCommandAlias("ci-publish", "github; ci-release")
 
@@ -30,4 +30,9 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.11" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.12" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.12" % Test)
-  .settings(addCompilerPlugin(("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full)))
+  .settings(
+    libraryDependencies ++= CrossVersion
+      .partialVersion(scalaVersion.value)
+      .collect { case (2, _) => compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full) }
+      .toList
+  )
