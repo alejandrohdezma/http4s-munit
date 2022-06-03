@@ -9,11 +9,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION@" % Test) // if using http4s 0.23.x
-
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION_022x@" % Test) // if using http4s 0.22.x
-
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION_021x@" % Test) // if using http4s 0.21.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION@" % Test)
 ```
 
 ## Usage
