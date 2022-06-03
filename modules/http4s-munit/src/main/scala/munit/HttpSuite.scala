@@ -25,10 +25,14 @@ import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
 import org.http4s.client.Client
+import org.http4s.ember.client.EmberClientBuilder
 
 /** Base class for suites testing remote HTTP servers.
   *
-  * To use this class you'll need to provide the `Uri` of the remote container by overriding `baseUri`.
+  * To use this class you'll need to provide the `Uri` of the remote server by overriding `baseUri`.
+  *
+  * By default this class uses `Ember` as the client to connect to the server. If you don't want to use this specific
+  * client you will need to override the `http4sMUnitClient` value.
   *
   * @example
   *   {{{
@@ -82,11 +86,16 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
   ): String =
     Http4sMUnitDefaults.http4sMUnitNameCreator(ContextRequest((), request), followingRequests, testOptions, config)
 
-  /** This client is used under the hood to execute the requests.
-    *
-    * Users need to provide a value for it using one of the available clients.
-    */
-  def http4sMUnitClient: Resource[IO, Client[IO]]
+  /** This client is used under the hood to execute the requests. */
+  def http4sMUnitClient: Resource[IO, Client[IO]] = try
+    EmberClientBuilder.default[IO].build
+  catch {
+    case _: NoClassDefFoundError =>
+      throw new IllegalAccessException(
+        "To use `HttpSuite` you either need to add `http4s-ember-client` dependency or provide your own " +
+          "client implementation by overriding `http4sMUnitClient`."
+      ) // scalafix:ok
+  }
 
   override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     ResourceFixture(http4sMUnitClient.map(client => req => client.run(req.withUri(baseUri().resolve(req.uri)))))
