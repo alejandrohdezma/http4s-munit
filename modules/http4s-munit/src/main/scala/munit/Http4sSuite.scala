@@ -25,6 +25,9 @@ import fs2.Stream
 import io.circe.parser.parse
 import org.http4s.Header
 import org.http4s.Response
+import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.dsl.Http4sDsl
+import org.http4s.syntax.AllSyntax
 import org.typelevel.ci.CIString
 
 /** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
@@ -34,7 +37,7 @@ import org.typelevel.ci.CIString
   * @author
   *   José Gutiérrez
   */
-abstract class Http4sSuite[Request] extends CatsEffectSuite {
+abstract class Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax {
 
   /** Allows altering the name of the generated tests.
     *

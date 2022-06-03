@@ -26,9 +26,6 @@ import sbt.testing.TaskDef
 
 import org.http4s.HttpRoutes
 import org.http4s.Response
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 /** This suite ensures that the logs outputed by this library are correct.
   *

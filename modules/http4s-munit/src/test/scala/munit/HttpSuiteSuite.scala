@@ -17,11 +17,8 @@
 package munit
 
 import io.circe.Json
-import org.http4s.Method.GET
 import org.http4s.Uri
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.syntax.all._
 
 class HttpSuiteSuite extends HttpSuite {
 

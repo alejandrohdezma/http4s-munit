@@ -22,9 +22,6 @@ We can use the `Http4sHttpRoutesSuite` to write tests for an `HttpRoutes` using 
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
 
@@ -57,9 +54,6 @@ If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use th
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 
@@ -89,10 +83,7 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.blaze.client.BlazeClientBuilder
-import org.http4s.syntax.all._
 
 class GitHubSuite extends munit.HttpSuite {
 
@@ -125,10 +116,7 @@ import com.dimafeng.testcontainers.munit.fixtures.TestContainersFixtures
 import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
 
 class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
 
@@ -162,10 +150,7 @@ import com.dimafeng.testcontainers.GenericContainer
 import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
 
 class TestContainersSuite extends munit.HttpSuite {
 
@@ -194,9 +179,6 @@ Once the request has been passed to the `test` method, we can tag our tests befo
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
 
@@ -324,9 +306,6 @@ For example, when running the following suite...
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MySuite extends munit.Http4sHttpRoutesSuite {
 
@@ -376,10 +355,7 @@ import com.dimafeng.testcontainers.GenericContainer
 import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
 import org.typelevel.ci._
 
 class TestContainersSuite extends munit.HttpSuite {
