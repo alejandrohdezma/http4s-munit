@@ -76,7 +76,7 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 ### Testing a remote HTTP server
 
 In the case you don't want to use static http4s routes, but a running HTTP server, you have available the `HttpSuite`. This suite behaves exactly the same as the previous ones except that you don't provide a `routes` object, but a `baseUri` with the URI of your HTTP server. Any `Request` added in tests will prepend
-this URI before making a call using a real http4s `Client` (that you'll have to provide using `http4sMUnitClient`).
+this URI before making a call using a real http4s `Client`. By default the library uses Ember as the client implementation (although you'll need to provide its dependency explicitly). If you want to use a different implementation just override `http4sMUnitClient`.
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
@@ -87,11 +87,11 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.blaze.client.BlazeClientBuilder
 
 class GitHubSuite extends munit.HttpSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].resource
 
   override val baseUri: Uri = uri"https://api.github.com"
 
