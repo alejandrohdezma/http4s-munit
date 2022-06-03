@@ -13,14 +13,6 @@ lazy val documentation = project
   .settings(mdocOut := file("."))
   .dependsOn(`http4s-munit-testcontainers` % "compile->test")
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.12")
-  .settings(mdocVariables ++= {
-    val all = releases.value.filter(_.isPublished)
-
-    val `0.7.x` = all.filter(_.name.startsWith("v0.7.")).reverse.headOption.map(_.tag.substring(1)).getOrElse("")
-    val `0.8.x` = all.filter(_.name.startsWith("v0.8.")).reverse.headOption.map(_.tag.substring(1)).getOrElse("")
-
-    Map("VERSION_021x" -> `0.7.x`, "VERSION_022x" -> `0.8.x`)
-  })
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
