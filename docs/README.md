@@ -104,8 +104,9 @@ class GitHubSuite extends munit.HttpSuite {
 
 ### Testing an HTTP server running inside a container
 
-Since version `0.10.0` usage of `HttpFromContainerSuite` has been deprecated in favour of
-`HttpSuite` + `TestContainersFixtures` (available since `testcontainers-scala-munit` `0.40.3`):
+Testing a Docker container with TestContainers and `http4s-munit` is easy. You
+just need to use `TestCotnainersFixtures` and use an `HttpSuite` to connect to
+it:
 
 ```scala mdoc:reset:silent
 import cats.effect.IO

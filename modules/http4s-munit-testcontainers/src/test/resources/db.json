@@ -1,7 +1,0 @@
-{
-  "posts": [
-    { "id": 1, "body": "First", "published": true },
-    { "id": 2, "body": "Second", "published": false },
-    { "id": 3, "body": "Third", "published": true }
-  ]
-}
