@@ -1,19 +1,29 @@
-# Integration between http4s & MUnit
-
-[![][maven-badge]][maven] [![][steward-badge]][steward]
+# When http4s met MUnit
 
 Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](https://github.com/http4s/http4s/).
+
+---
+
+- [Installation](#installation)
+- [Usage](#usage)
+  - [Testing `HttpRoutes`](#testing-httproutes)
+  - [Testing `AuthedRoutes`](#testing-authedroutes)
+  - [Testing a remote HTTP server](#testing-a-remote-http-server)
+  - [Testing an HTTP server running inside a container](#testing-an-http-server-running-inside-a-container)
+- [Other features](#other-features)
+  - [Tagging your tests](#tagging-your-tests)
+  - [Stress-testing](#stress-testing)
+  - [Nested requests](#nested-requests)
+  - [Test names](#test-names)
+  - [Body in failed assertions](#body-in-failed-assertions)
+  - [Response clues](#response-clues)
 
 ## Installation
 
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.9.4" % Test) // if using http4s 0.23.x
-
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.8.3" % Test) // if using http4s 0.22.x
-
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.7.3" % Test) // if using http4s 0.21.x
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.10.0" % Test)
 ```
 
 ## Usage
@@ -26,9 +36,6 @@ We can use the `Http4sHttpRoutesSuite` to write tests for an `HttpRoutes` using 
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
 
@@ -61,9 +68,6 @@ If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use th
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 
@@ -82,7 +86,7 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 ### Testing a remote HTTP server
 
 In the case you don't want to use static http4s routes, but a running HTTP server, you have available the `HttpSuite`. This suite behaves exactly the same as the previous ones except that you don't provide a `routes` object, but a `baseUri` with the URI of your HTTP server. Any `Request` added in tests will prepend
-this URI before making a call using a real http4s `Client` (that you'll have to provide using `http4sMUnitClient`).
+this URI before making a call using a real http4s `Client`. By default the library uses Ember as the client implementation (although you'll need to provide its dependency explicitly). If you want to use a different implementation just override `http4sMUnitClient`.
 
 ```scala
 import cats.effect.IO
@@ -93,14 +97,11 @@ import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
+import org.http4s.blaze.client.BlazeClientBuilder
 
 class GitHubSuite extends munit.HttpSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = EmberClientBuilder.default[IO].build
+  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].resource
 
   override val baseUri: Uri = uri"https://api.github.com"
 
@@ -117,8 +118,9 @@ class GitHubSuite extends munit.HttpSuite {
 
 ### Testing an HTTP server running inside a container
 
-Since version `0.10.0` usage of `HttpFromContainerSuite` has been deprecated in favour of
-`HttpSuite` + `TestContainersFixtures` (available since `testcontainers-scala-munit` `0.40.3`):
+Testing a Docker container with TestContainers and `http4s-munit` is easy. You
+just need to use `TestCotnainersFixtures` and use an `HttpSuite` to connect to
+it:
 
 ```scala
 import cats.effect.IO
@@ -128,10 +130,7 @@ import com.dimafeng.testcontainers.munit.fixtures.TestContainersFixtures
 import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
 
 class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
 
@@ -165,10 +164,7 @@ import com.dimafeng.testcontainers.GenericContainer
 import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
 
 class TestContainersSuite extends munit.HttpSuite {
 
@@ -306,9 +302,6 @@ For example, when running the following suite...
 import cats.effect.IO
 
 import org.http4s._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
-import org.http4s.syntax.all._
 
 class MySuite extends munit.Http4sHttpRoutesSuite {
 
@@ -358,10 +351,7 @@ import com.dimafeng.testcontainers.GenericContainer
 import io.circe.Json
 import org.http4s._
 import org.http4s.circe._
-import org.http4s.client.dsl.io._
-import org.http4s.dsl.io._
 import org.http4s.ember.client.EmberClientBuilder
-import org.http4s.syntax.all._
 import org.typelevel.ci._
 
 class TestContainersSuite extends munit.HttpSuite {
@@ -389,8 +379,3 @@ class TestContainersSuite extends munit.HttpSuite {
 
 }
 ```
-
-[maven]: https://search.maven.org/search?q=g:%20com.alejandrohdezma%20AND%20a:http4s-munit_2.13
-[maven-badge]: https://maven-badges.herokuapp.com/maven-central/com.alejandrohdezma/http4s-munit_2.13/badge.svg?kill_cache=1
-[steward]: https://scala-steward.org
-[steward-badge]: https://img.shields.io/badge/Scala_Steward-helping-brightgreen.svg?style=flat&logo=data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAA4AAAAQCAMAAAARSr4IAAAAVFBMVEUAAACHjojlOy5NWlrKzcYRKjGFjIbp293YycuLa3pYY2LSqql4f3pCUFTgSjNodYRmcXUsPD/NTTbjRS+2jomhgnzNc223cGvZS0HaSD0XLjbaSjElhIr+AAAAAXRSTlMAQObYZgAAAHlJREFUCNdNyosOwyAIhWHAQS1Vt7a77/3fcxxdmv0xwmckutAR1nkm4ggbyEcg/wWmlGLDAA3oL50xi6fk5ffZ3E2E3QfZDCcCN2YtbEWZt+Drc6u6rlqv7Uk0LdKqqr5rk2UCRXOk0vmQKGfc94nOJyQjouF9H/wCc9gECEYfONoAAAAASUVORK5CYII=
