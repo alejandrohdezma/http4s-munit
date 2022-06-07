@@ -94,6 +94,18 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
       ) // scalafix:ok
   }
 
+  val localhost = uri"http://localhost"
+
+  implicit class UriWithPort(uri: Uri) {
+
+    /** Allows changing the URIs port */
+    def withPort(port: Int): Uri = {
+      val authority = uri.authority.fold(Uri.Authority(port = Some(port)))(_.copy(port = Some(port)))
+      uri.copy(authority = Some(authority))
+    }
+
+  }
+
   override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     ResourceFixture(http4sMUnitClient.map(client => req => client.run(req.withUri(baseUri().resolve(req.uri)))))
 
