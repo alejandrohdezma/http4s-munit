@@ -23,7 +23,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.10.0" % Test
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.10.1" % Test
 ```
 
 ## Usage
@@ -162,7 +162,6 @@ import cats.syntax.all._
 
 import com.dimafeng.testcontainers.GenericContainer
 import io.circe.Json
-import org.http4s._
 import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 
@@ -173,7 +172,7 @@ class TestContainersSuite extends munit.HttpSuite {
 
   lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
 
-  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container.mappedPort(80)}")
+  override def baseUri() = localhost.withPort(container.mappedPort(80))
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
