@@ -83,6 +83,9 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] w
       config: Http4sMUnitConfig
   ): String
 
+  /** List of replacements that will be applied to the result of `http4sMUnitNameCreator` using `String#replaceAll` */
+  def http4sMUnitNameCreatorReplacements(): Seq[(String, String)] = Nil
+
   /** Returns the response as suite clues.
     *
     * This method is then used by `response.clues` extension method.

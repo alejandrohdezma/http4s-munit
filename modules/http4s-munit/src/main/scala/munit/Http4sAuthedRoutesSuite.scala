@@ -64,7 +64,13 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig
-  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(request, followingRequests, testOptions, config)
+  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
+    request,
+    followingRequests,
+    testOptions,
+    config,
+    http4sMUnitNameCreatorReplacements()
+  )
 
   implicit class Request2AuthedRequest(request: Request[IO]) {
 

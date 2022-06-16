@@ -81,7 +81,13 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
       testOptions: TestOptions,
       config: Http4sMUnitConfig
   ): String =
-    Http4sMUnitDefaults.http4sMUnitNameCreator(ContextRequest((), request), followingRequests, testOptions, config)
+    Http4sMUnitDefaults.http4sMUnitNameCreator(
+      ContextRequest((), request),
+      followingRequests,
+      testOptions,
+      config,
+      http4sMUnitNameCreatorReplacements()
+    )
 
   /** This client is used under the hood to execute the requests. */
   def http4sMUnitClient: Resource[IO, Client[IO]] = try

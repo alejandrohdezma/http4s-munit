@@ -65,7 +65,13 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
       testOptions: TestOptions,
       config: Http4sMUnitConfig
   ): String =
-    Http4sMUnitDefaults.http4sMUnitNameCreator(ContextRequest((), request), followingRequests, testOptions, config)
+    Http4sMUnitDefaults.http4sMUnitNameCreator(
+      ContextRequest((), request),
+      followingRequests,
+      testOptions,
+      config,
+      http4sMUnitNameCreatorReplacements()
+    )
 
   override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
