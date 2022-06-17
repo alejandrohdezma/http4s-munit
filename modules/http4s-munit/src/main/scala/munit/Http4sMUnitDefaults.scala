@@ -29,7 +29,8 @@ object Http4sMUnitDefaults {
       request: ContextRequest[IO, A],
       followingRequests: List[String],
       testOptions: TestOptions,
-      config: Http4sMUnitConfig
+      config: Http4sMUnitConfig,
+      replacements: Seq[(String, String)] = Nil
   ): String = {
     val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
       case Nil                 => ""
@@ -49,7 +50,12 @@ object Http4sMUnitDefaults {
       case _ => ""
     }
 
-    s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}$clue${context.fold("")(" as " + _)}$reps"
+    val nameWithoutReplacements = s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}" +
+      s"$clue${context.fold("")(" as " + _)}$reps"
+
+    replacements.foldLeft(nameWithoutReplacements) { case (name, (value, replacement)) =>
+      name.replaceAll(value, replacement)
+    }
   }
 
 }
