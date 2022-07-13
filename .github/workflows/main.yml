@@ -1,0 +1,25 @@
+# Don't edit this file!
+# It is automatically updated after every release of https://github.com/alejandrohdezma/sbt-ci
+# If you want to suggest a change, please open a PR or issue in that repository
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  auto-update-outdated-prs-to-latest-main:
+    name: Update outdated PRs to latest `main`
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the GitHub App installation token
+        uses: alejandrohdezma/actions/github-app-token@v1
+        id: github_app
+        with:
+          token: ${{ secrets.GH_APP_TOKEN }}
+
+      - name: Update outdated PRs to latest `main`
+        uses: alejandrohdezma/actions/update-outdated-prs@v1
+        with:
+          github-token: ${{ steps.github_app.outputs.token }}
