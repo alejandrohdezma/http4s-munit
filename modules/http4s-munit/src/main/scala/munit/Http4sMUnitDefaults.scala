@@ -30,7 +30,7 @@ object Http4sMUnitDefaults {
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig,
-      replacements: Seq[(String, String)] = Nil
+      replacements: Seq[(String, String)] = Nil // scalafix:ok
   ): String = {
     val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
       case Nil                 => ""
