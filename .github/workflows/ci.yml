@@ -68,7 +68,7 @@ jobs:
       - name: Run `sbt generateCiFiles`
         uses: alejandrohdezma/actions/scala@v1
         with:
-          jvm: liberica:17
+          jvm: openjdk:1.17
           task: generateCiFiles
 
       - name: Commit changes by `sbt generateCiFiles`
@@ -79,7 +79,7 @@ jobs:
       - name: Run `sbt fix`
         uses: alejandrohdezma/actions/scala@v1
         with:
-          jvm: liberica:17
+          jvm: openjdk:1.17
           task: fix
 
       - name: Commit changes by `sbt fix`
@@ -99,8 +99,8 @@ jobs:
       fail-fast: false
       matrix:
         jdk:
-          - liberica:11
-          - liberica:17
+          - adopt:1.11
+          - openjdk:1.17
     steps:
       - name: Checkout project
         uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
