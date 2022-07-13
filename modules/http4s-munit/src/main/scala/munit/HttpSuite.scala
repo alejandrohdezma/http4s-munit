@@ -100,7 +100,7 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
       ) // scalafix:ok
   }
 
-  val localhost = uri"http://localhost"
+  val localhost = uri"http://localhost" // scalafix:ok
 
   implicit class UriWithPort(uri: Uri) {
 
