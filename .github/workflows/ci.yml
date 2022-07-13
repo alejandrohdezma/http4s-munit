@@ -55,9 +55,10 @@ jobs:
           token: ${{ secrets.GH_APP_TOKEN }}
 
       - name: Checkout project
-        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
         with:
           token: ${{ steps.github_app.outputs.token }}
+          ref: ${{ github.event.pull_request.head.ref }}
 
       - name: Enable auto-merge for this PR
         run: gh pr merge --auto --merge ${{github.event.pull_request.number}}
@@ -67,7 +68,7 @@ jobs:
       - name: Run `sbt generateCiFiles`
         uses: alejandrohdezma/actions/scala@v1
         with:
-          jvm: openjdk:1.17
+          jvm: liberica:17
           task: generateCiFiles
 
       - name: Commit changes by `sbt generateCiFiles`
@@ -78,7 +79,7 @@ jobs:
       - name: Run `sbt fix`
         uses: alejandrohdezma/actions/scala@v1
         with:
-          jvm: openjdk:1.17
+          jvm: liberica:17
           task: fix
 
       - name: Commit changes by `sbt fix`
@@ -98,12 +99,11 @@ jobs:
       fail-fast: false
       matrix:
         jdk:
-          - adopt:1.8
-          - adopt:1.11
-          - openjdk:1.17
+          - liberica:11
+          - liberica:17
     steps:
       - name: Checkout project
-        uses: actions/checkout@1e204e9a9253d643386038d443f96446fa156a97 # v2.3.5
+        uses: actions/checkout@ec3a7ce113134d7a93b817d10a8272cb61118579 # v2.4.0
         with:
           ref: ${{ github.head_ref }}
 
