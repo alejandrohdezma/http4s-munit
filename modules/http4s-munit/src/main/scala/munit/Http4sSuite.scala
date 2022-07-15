@@ -259,8 +259,8 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] w
               IO.raiseError(
                 new FailException(
                   s"${throwables.size} / $numRepetitions  tests failed while execution this parallel test\n${throwables
-                    .map(_.getMessage())
-                    .mkString("/n/n")}",
+                      .map(_.getMessage())
+                      .mkString("/n/n")}",
                   loc
                 )
               )
