@@ -73,7 +73,7 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
       http4sMUnitNameCreatorReplacements()
     )
 
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
@@ -99,6 +99,6 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
     * }
     *   }}}
     */
-  def test(request: Request[IO]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request)
+  def test(request: Request[IO]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
 
 }

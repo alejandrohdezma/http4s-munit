@@ -33,9 +33,6 @@ class HeaderInterpolatorSuite extends Http4sSuite[String] {
       config: Http4sMUnitConfig
   ): String = fail("This should no be called")
 
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[String => Resource[IO, Response[IO]]]] =
-    fail("This should no be called")
-
   test("header interpolator creates a valid raw header") {
     val header = ci"my-header" := "my-value"
 

@@ -112,7 +112,7 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
 
   }
 
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     ResourceFixture(http4sMUnitClient.map(client => req => client.run(req.withUri(baseUri().resolve(req.uri)))))
 
   /** Declares a test for the provided request. That request will be executed using the provided client in `httpClient`
@@ -139,6 +139,6 @@ abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixt
     * }
     *   }}}
     */
-  def test(request: Request[IO]) = Http4sMUnitTestCreator(request)
+  def test(request: Request[IO]) = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
 
 }

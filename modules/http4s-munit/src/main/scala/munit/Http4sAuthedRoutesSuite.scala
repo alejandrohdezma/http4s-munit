@@ -82,7 +82,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   }
 
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
+  def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
@@ -108,6 +108,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
     * }
     *   }}}
     */
-  def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request)
+  def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator =
+    Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
 
 }

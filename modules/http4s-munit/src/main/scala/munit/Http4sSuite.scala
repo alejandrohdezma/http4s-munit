@@ -135,11 +135,6 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] w
           else json
       )
 
-  /** Base fixture used to obtain a response from a request. Can be re-implemented if you want to override the default
-    * behaviour of a suite.
-    */
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request => Resource[IO, Response[IO]]]]
-
   implicit final class CiStringHeaderOps(ci: CIString) {
 
     /** Creates a `Header.Raw` value from a case-insensitive string. */
@@ -149,6 +144,7 @@ abstract class Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] w
 
   case class Http4sMUnitTestCreator(
       request: Request,
+      http4sMUnitFunFixture: SyncIO[FunFixture[Request => Resource[IO, Response[IO]]]],
       followingRequests: List[(String, Response[IO] => IO[Request])] = Nil,
       testOptions: TestOptions = TestOptions(""),
       config: Http4sMUnitConfig = Http4sMUnitConfig.default
