@@ -60,6 +60,39 @@ munit.MyHttpRoutesSuite:0s
   + GET -> hello/Jose (Say hello to Jose) 0.014s
 ```
 
+### Testing `HttpRoutes` per-test
+
+We can use the `Http4sTestHttpRoutesSuite` to write tests for an `HttpRoutes` using `Request[IO]` values easily:
+
+```scala
+import cats.effect.IO
+
+import org.http4s._
+
+class MyHttpRoutesSuite extends munit.Http4sTestHttpRoutesSuite {
+
+  test(
+    routes = {
+      HttpRoutes.of { case GET -> Root / "hello" / name =>
+        Ok(s"Hi $name")
+      }
+    }
+  )(GET(uri"hello" / "Jose")).alias("Say hello to Jose") { response =>
+    assertIO(response.as[String], "Hi Jose")
+  }
+
+}
+```
+
+The `test` method receives `HttpRoutes[IO]` and `Request[IO]` object and when the test runs, it runs that request against the provided routes and let you assert the response.
+
+`http4s-munit` will automatically name your tests using the information of the provided `Request`. For example, for the test shown in the previous code snippet, the following will be shown when running the test:
+
+```
+munit.MyHttpRoutesSuite:0s
+  + GET -> hello/Jose (Say hello to Jose) 0.014s
+```
+
 ### Testing `AuthedRoutes`
 
 If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use the `Http4sAuthedRoutesSuite`. It is completely similar to the previous suite, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to provide `AuthedRequest` instead of `Request` in the `test` definition. We can do this using its own constructor or by using our extension function `context` or `->`:
@@ -77,6 +110,26 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
   }
 
   test(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
+    assertIO(response.as[String], "alex: Hi Jose")
+  }
+
+}
+```
+
+### Testing `AuthedRoutes`  per-test
+
+If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use the `Http4sTestAuthedRoutesSuite`. It is completely similar to the previous suite, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to provide `AuthedRequest` instead of `Request` in the `test` definition. We can do this using its own constructor or by using our extension function `context` or `->`:
+
+```scala
+import cats.effect.IO
+
+import org.http4s._
+
+class MyAuthedRoutesSuite extends munit.Http4sTestAuthedRoutesSuite[String] {
+
+  test(routes = AuthedRoutes.of { case GET -> Root / "hello" / name as user =>
+    Ok(s"$user: Hi $name")
+  })(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
   }
 
