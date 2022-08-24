@@ -16,6 +16,7 @@ jobs:
     steps:
       - name: Update PR labels
         uses: alejandrohdezma/actions/labeler@v1
+        if: github.event.pull_request.head.repo.full_name == github.repository
 
       - name: Check PR labels
         uses: alejandrohdezma/actions/label-check@v1
@@ -67,7 +68,7 @@ jobs:
           message: Run `sbt fix`
 
   test:
-    needs: [labeler, ci-steward]
+    needs: [ci-steward]
     if: |
       always() && !contains(needs.*.result, 'failure') && github.event.pull_request.state == 'OPEN' &&
         github.actor != 'dependabot[bot]'
