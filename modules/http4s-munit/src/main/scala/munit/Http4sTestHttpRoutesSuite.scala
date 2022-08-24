@@ -25,9 +25,7 @@ import org.http4s.HttpRoutes
 import org.http4s.Request
 import org.http4s.Response
 
-/** Base class for suites testing `HttpRoutes`.
-  *
-  * To use this class you'll need to provide the routes being tested by overriding `routes`.
+/** Base class for suites testing per-test `HttpRoutes`.
   *
   * @example
   *   {{{
@@ -35,28 +33,20 @@ import org.http4s.Response
   *
   * import org.http4s.HttpRoutes
   *
-  * class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite[String] {
+  * class MyHttpRoutesSuite extends munit.Http4sTestHttpRoutesSuite {
   *
-  *   override val routes: HttpRoutes[IO] = HttpRoutes.of {
-  *     case GET -> Root / "hello" => Ok("Hello!")
-  *   }
-  *
-  *   test(GET(uri"hello")) { response =>
+  *   test(routes = HttpRoutes.of { case GET -> Root / "hello" =>
+  *     Ok("Hello!")
+  *   }(GET(uri"hello")) { response =>
   *     assertIO(response.as[String], "Hello!")
   *   }
   *
   * }
   *   }}}
-  *
   * @author
-  *   Alejandro Hernández
-  * @author
-  *   José Gutiérrez
+  *   Jack Treble
   */
-abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
-
-  /** The HTTP routes being tested */
-  val routes: HttpRoutes[IO]
+abstract class Http4sTestHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
   /** @inheritdoc */
   override def http4sMUnitNameCreator(
@@ -73,32 +63,41 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
       http4sMUnitNameCreatorReplacements()
     )
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+  def http4sMUnitFunFixture(routes: HttpRoutes[IO]): SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
 
-  /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
+  /** Declares a test for the provided routes and request.
     *
     * @example
     *   {{{
-    * test(GET(uri"users" / 42)) { response =>
+    * test(routes = HttpRoutes.of { case GET -> Root / "users" / number =>
+    *   Ok(number)
+    * }(GET(uri"users" / 42)) { response =>
     *     // test body
     * }
     *   }}}
-    *
     * @example
     *   {{{
-    * test(POST(json, uri"users")).alias("Create a new user") { response =>
+    * test(routes = HttpRoutes.of { case req @ POST -> Root / "users" =>
+    *   Ok(req.as[String])
+    * }(POST(json, uri"users")).alias("Create a new user") { response =>
     *     // test body
     * }
     *   }}}
-    *
     * @example
     *   {{{
-    * test(GET(uri"users" / 42)).flaky { response =>
+    * test(routes = HttpRoutes.of { case GET -> Root / "users" / number =>
+    *   Ok(number)
+    * }(GET(uri"users" / 42)).flaky { response =>
     *     // test body
     * }
     *   }}}
     */
-  def test(request: Request[IO]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+  def test(routes: HttpRoutes[IO])(request: Request[IO]): Http4sMUnitTestCreator = {
+    Http4sMUnitTestCreator(
+      request,
+      http4sMUnitFunFixture(routes)
+    )
+  }
 
 }

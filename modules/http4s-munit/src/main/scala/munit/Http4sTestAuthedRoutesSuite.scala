@@ -20,19 +20,14 @@ import cats.Show
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
-
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
 import org.http4s.ContextRequest
 import org.http4s.Request
 import org.http4s.Response
 
-/** Base class for suites testing `AuthedRoutes`.
-  *
-  * To use this class you'll need to provide the routes being tested by overriding `routes`.
-  *
-  * Ensure that a `Show` instance for the request's context type is in scope. This instance will be used to include the
-  * context's information in the test's name.
+/** Base class for suites testing per-test `AuthedRoutes`. * Ensure that a `Show` instance for the request's context
+  * type is in scope. This instance will be used to include the context's information in the test's name.
   *
   * @example
   *   {{{
@@ -40,23 +35,18 @@ import org.http4s.Response
   *
   * import org.http4s.AuthedRoutes
   *
-  * class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
+  * class MyAuthedRoutesSuite extends munit.Http4sTestAuthedRoutesSuite[String] {
   *
-  *   override val routes: AuthedRoutes[String, IO] = AuthedRoutes.of {
-  *     case GET -> Root / "hello" as user => Ok(user + " says Hi")
-  *   }
-  *
-  *   test(GET(uri"hello").as("Jose")) { response =>
+  *   test(routes = AuthedRoutes.of { case GET -> Root / "hello" as user =>
+  *     Ok(user + " says Hi")
+  *   }).as("Jose")) { response =>
   *     assertIO(response.as[String], "Jose says Hi")
   *   }
   *
   * }
   *   }}}
   */
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
-
-  /** The HTTP routes being tested */
-  val routes: AuthedRoutes[A, IO]
+abstract class Http4sTestAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
 
   /** @inheritdoc */
   override def http4sMUnitNameCreator(
@@ -82,33 +72,39 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   }
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
+  def http4sMUnitFunFixture(
+      routes: AuthedRoutes[A, IO]
+  ): SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
 
-  /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
+  /** Declares a test for the provided routes and request.
     *
     * @example
     *   {{{
-    * test(GET(uri"users" / 42).context("user-1")) { response =>
+    * test(routes = AuthedRoutes.of { case GET -> Root / "users" / number =>
+    *   Ok(number)
+    * }(GET(uri"users" / 42)) { response =>
     *     // test body
     * }
     *   }}}
-    *
     * @example
     *   {{{
-    * test(POST(json, uri"users") -> "user-2").alias("Create a new user") { response =>
+    * test(routes = AuthedRoutes.of { case req @ POST -> Root / "users" =>
+    *   Ok(req.as[String])
+    * }(POST(json, uri"users")).alias("Create a new user") { response =>
     *     // test body
     * }
     *   }}}
-    *
     * @example
     *   {{{
-    * test(GET(uri"users" / 42).context("user-3")).flaky { response =>
+    * test(routes = AuthedRoutes.of { case GET -> Root / "users" / number =>
+    *   Ok(number)
+    * }(GET(uri"users" / 42)).flaky { response =>
     *     // test body
     * }
     *   }}}
     */
-  def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator =
-    Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+  def test(routes: AuthedRoutes[A, IO])(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator =
+    Http4sMUnitTestCreator(request, http4sMUnitFunFixture(routes))
 
 }

@@ -16,27 +16,20 @@
 
 package munit
 
-import cats.effect.IO
-import cats.effect.SyncIO
-import cats.effect.kernel.Resource
+import org.http4s.AuthedRoutes
 
-import org.http4s.Header
-import org.http4s.Response
-import org.typelevel.ci._
+class Http4sTestAuthedRoutesSuiteSuite extends Http4sTestAuthedRoutesSuite[String] {
 
-class HeaderInterpolatorSuite extends Http4sSuite[String] {
+  test(routes = AuthedRoutes.of { case GET -> Root / "hello" as user =>
+    Ok(s"$user: Hi")
+  })(GET(uri"/hello") -> "jose").alias("Test 1") { response =>
+    assertIO(response.as[String], "jose: Hi")
+  }
 
-  override def http4sMUnitNameCreator(
-      request: String,
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String = fail("This should no be called")
-
-  test("header interpolator creates a valid raw header") {
-    val header = ci"my-header" := "my-value"
-
-    assertEquals(header, Header.Raw(ci"my-header", "my-value"))
+  test(routes = AuthedRoutes.of { case GET -> Root / "hello" / name as user =>
+    Ok(s"$user: Hi $name")
+  })(GET(uri"/hello" / "Jose").context("alex")).alias("Test 2") { response =>
+    assertIO(response.as[String], "alex: Hi Jose")
   }
 
 }
