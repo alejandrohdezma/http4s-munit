@@ -67,7 +67,7 @@ jobs:
           message: Run `sbt fix`
 
   test:
-    needs: [labeler, ci-steward]
+    needs: [ci-steward]
     if: |
       always() && !contains(needs.*.result, 'failure') && github.event.pull_request.state == 'OPEN' &&
         github.actor != 'dependabot[bot]'
