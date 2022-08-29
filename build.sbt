@@ -21,7 +21,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.15" % Optional)
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.2")
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.11" % Test)
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.0" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.15" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.15" % Test)
   .settings(
