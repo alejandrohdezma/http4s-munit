@@ -17,6 +17,7 @@
 package munit
 
 import cats.effect.IO
+import cats.syntax.all._
 
 import org.http4s.HttpRoutes
 import org.http4s.Status
@@ -49,7 +50,7 @@ class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
   def makeRoutes(database: Database): HttpRoutes[IO] = {
     HttpRoutes.of { case GET -> Root / "user" / idStr =>
-      idStr.toIntOption match {
+      Either.catchNonFatal(idStr.toInt).toOption match {
         case Some(id) =>
           database.getUser(id).flatMap {
             case Some(username) => Ok(username)
