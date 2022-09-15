@@ -17,9 +17,9 @@
 package munit
 
 import cats.effect.IO
+
 import org.http4s.HttpRoutes
 import org.http4s.Status
-import cats.implicits._
 
 class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
