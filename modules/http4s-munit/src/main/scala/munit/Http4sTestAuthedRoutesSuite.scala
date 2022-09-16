@@ -20,6 +20,7 @@ import cats.Show
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
+
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
 import org.http4s.ContextRequest
