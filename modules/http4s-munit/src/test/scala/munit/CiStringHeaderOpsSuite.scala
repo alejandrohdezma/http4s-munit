@@ -16,12 +16,7 @@
 
 package munit
 
-import cats.effect.IO
-import cats.effect.SyncIO
-import cats.effect.kernel.Resource
-
 import org.http4s.Header
-import org.http4s.Response
 import org.typelevel.ci._
 
 class HeaderInterpolatorSuite extends Http4sSuite[String] {
