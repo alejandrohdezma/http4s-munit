@@ -1,5 +1,7 @@
+val Scala3 = "3.1.3" // scala-steward:off
 ThisBuild / scalaVersion       := "2.13.8"
-ThisBuild / crossScalaVersions := Seq("2.12.16", "2.13.8", "3.1.3")
+ThisBuild / crossScalaVersions := Seq("2.12.17", "2.13.8", Scala3)
+
 ThisBuild / organization       := "com.alejandrohdezma"
 ThisBuild / extraCollaborators += Collaborator.github("gutiory")
 
@@ -16,14 +18,14 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.15")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.15")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.15" % Optional)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.16")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.16")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.16" % Optional)
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
-  .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.2")
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.2.11" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.15" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.15" % Test)
+  .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.3")
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.1" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.16" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.16" % Test)
   .settings(
     libraryDependencies ++= CrossVersion
       .partialVersion(scalaVersion.value)
