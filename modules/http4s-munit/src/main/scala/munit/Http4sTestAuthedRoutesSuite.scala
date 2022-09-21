@@ -47,6 +47,7 @@ import org.http4s.Response
   * }
   *   }}}
   */
+@deprecated("Use Http4sHttpRoutesSuite overriding routes per-test with `withRoutes` instead", since = "0.13.0")
 abstract class Http4sTestAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
 
   /** @inheritdoc */
@@ -105,6 +106,7 @@ abstract class Http4sTestAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRe
     * }
     *   }}}
     */
+  @deprecated("Use Http4sAuthedRoutesSuite overriding routes per-test with `withRoutes` instead", since = "0.13.0")
   def test(routes: AuthedRoutes[A, IO])(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator =
     Http4sMUnitTestCreator(request, http4sMUnitFunFixture(routes))
 
