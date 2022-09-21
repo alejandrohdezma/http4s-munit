@@ -16,20 +16,21 @@
 
 package munit
 
-import org.http4s.AuthedRoutes
 import cats.effect.IO
+
+import org.http4s.AuthedRoutes
 
 class Http4sTestAuthedRoutesSuiteSuite extends Http4sTestAuthedRoutesSuite[String] {
 
-  test(routes = AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user =>
-    Ok(s"$user: Hi")
-  })(GET(uri"/hello") -> "jose").alias("Test 1") { response =>
+  test(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hi") }) {
+    GET(uri"/hello") -> "jose"
+  }.alias("Test 1") { response =>
     assertIO(response.as[String], "jose: Hi")
   }
 
-  test(routes = AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user =>
-    Ok(s"$user: Hi $name")
-  })(GET(uri"/hello" / "Jose").context("alex")).alias("Test 2") { response =>
+  test(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name") }) {
+    GET(uri"/hello" / "Jose").context("alex")
+  }.alias("Test 2") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
   }
 

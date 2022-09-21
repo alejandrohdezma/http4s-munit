@@ -24,19 +24,15 @@ import org.http4s.Status
 
 class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
-  test(routes = HttpRoutes.of[IO] { case GET -> Root / "hello" =>
-    Ok("Hi")
-  })(GET(uri"/hello")).alias("Test 1") { response =>
+  test(HttpRoutes.of[IO] { case GET -> Root / "hello" => Ok("Hi") }) {
+    GET(uri"/hello")
+  }.alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")
   }
 
-  test(
-    routes = {
-      HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
-        Ok(s"Hi $name")
-      }
-    }
-  )(GET(uri"/hello" / "Jose")).alias("Test 2") { response =>
+  test(HttpRoutes.of[IO] { case GET -> Root / "hello" / name => Ok(s"Hi $name") }) {
+    GET(uri"/hello" / "Jose")
+  }.alias("Test 2") { response =>
     assertIO(response.as[String], "Hi Jose")
   }
 
@@ -48,42 +44,34 @@ class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
   }
 
-  def makeRoutes(database: Database): HttpRoutes[IO] = {
-    HttpRoutes.of { case GET -> Root / "user" / idStr =>
-      Either.catchNonFatal(idStr.toInt).toOption match {
-        case Some(id) =>
-          database.getUser(id).flatMap {
-            case Some(username) => Ok(username)
-            case None           => NotFound("User not found")
-          }
-        case None => BadRequest("Id is not a number")
-      }
+  def makeRoutes(database: Database): HttpRoutes[IO] = HttpRoutes.of { case GET -> Root / "user" / idStr =>
+    Either.catchNonFatal(idStr.toInt).toOption match {
+      case Some(id) =>
+        database.getUser(id).flatMap {
+          case Some(username) => Ok(username)
+          case None           => NotFound("User not found")
+        }
+      case None => BadRequest("Id is not a number")
     }
   }
 
-  test(makeRoutes(new Database {
-
-    override def getUser(id: Int): IO[Option[String]] = IO(Some("Jack"))
-
-  }))(GET(uri"/user/1")).alias("Return Ok when user exists") { response =>
+  test(makeRoutes(_ => IO(Some("Jack")))) {
+    GET(uri"/user/1")
+  }.alias("Return Ok when user exists") { response =>
     assertEquals(response.status, Status.Ok)
     assertIO(response.as[String], "Jack")
   }
 
-  test(makeRoutes(new Database {
-
-    override def getUser(id: Int): IO[Option[String]] = IO(None)
-
-  }))(GET(uri"/user/1")).alias("Return NotFound when user does not exist") { response =>
+  test(makeRoutes(_ => IO(None))) {
+    GET(uri"/user/1")
+  }.alias("Return NotFound when user does not exist") { response =>
     assertEquals(response.status, Status.NotFound)
     assertIO(response.as[String], "User not found")
   }
 
-  test(makeRoutes(new Database {
-
-    override def getUser(id: Int): IO[Option[String]] = IO(fail("should not be called"))
-
-  }))(GET(uri"/user/NaN")).alias("Return BadRequest when user id is not a number") { response =>
+  test(makeRoutes(_ => IO(fail("should not be called")))) {
+    GET(uri"/user/NaN")
+  }.alias("Return BadRequest when user id is not a number") { response =>
     assertEquals(response.status, Status.BadRequest)
     assertIO(response.as[String], "Id is not a number")
   }
