@@ -17,13 +17,14 @@
 package munit
 
 import cats.effect.IO
+import cats.syntax.all._
+
 import org.http4s.HttpRoutes
 import org.http4s.Status
-import cats.implicits._
 
 class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
-  test(routes = HttpRoutes.of { case GET -> Root / "hello" =>
+  test(routes = HttpRoutes.of[IO] { case GET -> Root / "hello" =>
     Ok("Hi")
   })(GET(uri"/hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")
@@ -31,7 +32,7 @@ class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
   test(
     routes = {
-      HttpRoutes.of { case GET -> Root / "hello" / name =>
+      HttpRoutes.of[IO] { case GET -> Root / "hello" / name =>
         Ok(s"Hi $name")
       }
     }
@@ -49,7 +50,7 @@ class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
 
   def makeRoutes(database: Database): HttpRoutes[IO] = {
     HttpRoutes.of { case GET -> Root / "user" / idStr =>
-      idStr.toIntOption match {
+      Either.catchNonFatal(idStr.toInt).toOption match {
         case Some(id) =>
           database.getUser(id).flatMap {
             case Some(username) => Ok(username)
