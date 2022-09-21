@@ -22,21 +22,9 @@ import cats.syntax.all._
 import org.http4s.HttpRoutes
 import org.http4s.Status
 
-class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
+class RealWorldTest extends Http4sHttpRoutesSuite {
 
-  test(HttpRoutes.of[IO] { case GET -> Root / "hello" => Ok("Hi") }) {
-    GET(uri"/hello")
-  }.alias("Test 1") { response =>
-    assertIO(response.as[String], "Hi")
-  }
-
-  test(HttpRoutes.of[IO] { case GET -> Root / "hello" / name => Ok(s"Hi $name") }) {
-    GET(uri"/hello" / "Jose")
-  }.alias("Test 2") { response =>
-    assertIO(response.as[String], "Hi Jose")
-  }
-
-  // Real world test
+  override val routes: HttpRoutes[IO] = HttpRoutes.fail
 
   trait Database {
 
@@ -55,25 +43,25 @@ class Http4sTestHttpRoutesSuiteSuite extends Http4sTestHttpRoutesSuite {
     }
   }
 
-  test(makeRoutes(_ => IO(Some("Jack")))) {
-    GET(uri"/user/1")
-  }.alias("Return Ok when user exists") { response =>
-    assertEquals(response.status, Status.Ok)
-    assertIO(response.as[String], "Jack")
-  }
+  test(GET(uri"/user/1"))
+    .withRoutes(makeRoutes(_ => IO(Some("Jack"))))
+    .alias("Return Ok when user exists") { response =>
+      assertEquals(response.status, Status.Ok)
+      assertIO(response.as[String], "Jack")
+    }
 
-  test(makeRoutes(_ => IO(None))) {
-    GET(uri"/user/1")
-  }.alias("Return NotFound when user does not exist") { response =>
-    assertEquals(response.status, Status.NotFound)
-    assertIO(response.as[String], "User not found")
-  }
+  test(GET(uri"/user/1"))
+    .withRoutes(makeRoutes(_ => IO(None)))
+    .alias("Return NotFound when user does not exist") { response =>
+      assertEquals(response.status, Status.NotFound)
+      assertIO(response.as[String], "User not found")
+    }
 
-  test(makeRoutes(_ => IO(fail("should not be called")))) {
-    GET(uri"/user/NaN")
-  }.alias("Return BadRequest when user id is not a number") { response =>
-    assertEquals(response.status, Status.BadRequest)
-    assertIO(response.as[String], "Id is not a number")
-  }
+  test(GET(uri"/user/NaN"))
+    .withRoutes(makeRoutes(_ => IO(fail("should not be called"))))
+    .alias("Return BadRequest when user id is not a number") { response =>
+      assertEquals(response.status, Status.BadRequest)
+      assertIO(response.as[String], "Id is not a number")
+    }
 
 }
