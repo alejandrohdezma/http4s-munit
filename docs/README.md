@@ -13,6 +13,10 @@ Add the following line to your `build.sbt` file:
 libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION@" % Test
 ```
 
+## Contributors to this project
+
+@CONTRIBUTORS_TABLE@
+
 ## Usage
 
 ### Testing `HttpRoutes`
