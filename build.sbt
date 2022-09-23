@@ -1,6 +1,6 @@
 val Scala3 = "3.1.3" // scala-steward:off
-ThisBuild / scalaVersion       := "2.13.8"
-ThisBuild / crossScalaVersions := Seq("2.12.17", "2.13.8", Scala3)
+ThisBuild / scalaVersion       := "2.13.9"
+ThisBuild / crossScalaVersions := Seq("2.12.17", "2.13.9", Scala3)
 
 ThisBuild / organization       := "com.alejandrohdezma"
 ThisBuild / extraCollaborators += Collaborator.github("gutiory")
