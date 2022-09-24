@@ -16,8 +16,9 @@
 
 package munit
 
-import org.http4s.AuthedRoutes
 import cats.effect.IO
+
+import org.http4s.AuthedRoutes
 
 class Http4sTestAuthedRoutesSuiteSuite extends Http4sTestAuthedRoutesSuite[String] {
 
