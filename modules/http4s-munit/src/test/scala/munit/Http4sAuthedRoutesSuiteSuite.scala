@@ -35,4 +35,16 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
     assertIO(response.as[String], "alex: Hi Jose")
   }
 
+  test(GET(uri"/hello") -> "jose")
+    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") })
+    .alias("Test 1 (overriding routes)") { response =>
+      assertIO(response.as[String], "jose: Hey")
+    }
+
+  test(GET(uri"/hello" / "Jose").context("alex"))
+    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hey $name") })
+    .alias("Test 2 (overriding routes)") { response =>
+      assertIO(response.as[String], "alex: Hey Jose")
+    }
+
 }

@@ -82,6 +82,24 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   }
 
+  implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
+
+    /** Allows overriding the routes used when running this test. */
+    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = creator.copy(
+      http4sMUnitFunFixture =
+        SyncIO.pure(FunFixture(_ => req => newRoutes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
+    )
+
+  }
+
+  implicit class AuthedRoutesCompanionOps(companion: AuthedRoutes.type) {
+
+    /** An AuthedRoutes instance that always fails */
+    val fail: AuthedRoutes[A, IO] =
+      AuthedRoutes(request => Assertions.fail("This should not be called", clues(request)))
+
+  }
+
   def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
 

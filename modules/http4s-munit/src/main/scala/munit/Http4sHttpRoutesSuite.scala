@@ -55,7 +55,14 @@ import org.http4s.Response
   */
 abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
-  /** The HTTP routes being tested */
+  /** The HTTP routes being tested.
+    *
+    * If running every test with `withRoutes` you can set this value to:
+    *
+    * ```scala
+    * override val routes = HttpRoutes.fail
+    * ```
+    */
   val routes: HttpRoutes[IO]
 
   /** @inheritdoc */
@@ -72,6 +79,23 @@ abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
       config,
       http4sMUnitNameCreatorReplacements()
     )
+
+  implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
+
+    /** Allows overriding the routes used when running this test. */
+    def withRoutes(newRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator = creator.copy(
+      http4sMUnitFunFixture =
+        SyncIO.pure(FunFixture(_ => req => newRoutes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
+    )
+
+  }
+
+  implicit class HttpRoutesCompanionOps(companion: HttpRoutes.type) {
+
+    /** An HttpRoutes instance that always fails */
+    val fail: HttpRoutes[IO] = HttpRoutes(request => Assertions.fail("This should not be called", clues(request)))
+
+  }
 
   def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
