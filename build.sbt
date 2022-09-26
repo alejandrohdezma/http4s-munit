@@ -12,7 +12,6 @@ lazy val documentation = project
   .enablePlugins(MdocPlugin)
   .settings(mdocOut := file("."))
   .dependsOn(`http4s-munit` % "compile->test")
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.10")
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.12")
 
 lazy val `http4s-munit` = module
@@ -24,7 +23,9 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.3")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.1" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.16" % Test)
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.10" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.16" % Test)
+  .settings(Test / fork := true)
   .settings(
     libraryDependencies ++= CrossVersion
       .partialVersion(scalaVersion.value)

@@ -382,10 +382,11 @@ class TestContainersSuite extends munit.HttpSuite {
     Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
-    val id = response.headers.get(ci"x-request-id").map(_.head.value)
-
-    // Here you will filter `container.logs` using the `id`
-    val logs = container.logs.split("\n").filter(_.contains(id)).mkString("\n")
+    val logs = response.headers
+      .get(ci"x-request-id")
+      .map(_.head.value)
+      .map(id => container.logs.split("\n").filter(_.contains(id)).mkString("\n"))
+      .getOrElse(container.logs)
 
     clues(response, logs)
   }
