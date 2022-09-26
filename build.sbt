@@ -25,7 +25,6 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.16" % Test)
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.10" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.16" % Test)
-  .settings(Test / fork := true)
   .settings(
     libraryDependencies ++= CrossVersion
       .partialVersion(scalaVersion.value)
