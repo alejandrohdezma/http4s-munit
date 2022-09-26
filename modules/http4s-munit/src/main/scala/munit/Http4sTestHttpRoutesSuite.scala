@@ -46,6 +46,7 @@ import org.http4s.Response
   * @author
   *   Jack Treble
   */
+@deprecated("Use Http4sHttpRoutesSuite overriding routes per-test with `withRoutes` instead", since = "0.13.0")
 abstract class Http4sTestHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
   /** @inheritdoc */
@@ -93,6 +94,7 @@ abstract class Http4sTestHttpRoutesSuite extends Http4sSuite[Request[IO]] {
     * }
     *   }}}
     */
+  @deprecated("Use Http4sHttpRoutesSuite overriding routes per-test with `withRoutes` instead", since = "0.13.0")
   def test(routes: HttpRoutes[IO])(request: Request[IO]): Http4sMUnitTestCreator = {
     Http4sMUnitTestCreator(
       request,
