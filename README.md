@@ -24,7 +24,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.12.0" % Test
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.13.0" % Test
 ```
 
 ## Contributors to this project
@@ -54,6 +54,13 @@ class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
   test(GET(uri"hello" / "Jose")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "Hi Jose")
   }
+
+  // You can also override routes per-test
+  test(GET(uri"hello" / "Jose"))
+    .withRoutes(HttpRoutes.of[IO] { case GET -> Root / "hello" / _=> Ok("Hi") })
+    .alias("Overriden routes") { response =>
+      assertIO(response.as[String], "Hi")
+    }
 
 }
 ```
@@ -86,6 +93,13 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
   test(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
   }
+
+  // You can also override routes per-test
+  test(GET(uri"hello" / "Jose") -> "alex")
+    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
+    .alias("Overriden routes") { response =>
+      assertIO(response.as[String], "Hey")
+    }
 
 }
 ```
@@ -366,10 +380,11 @@ class TestContainersSuite extends munit.HttpSuite {
     Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
-    val id = response.headers.get(ci"x-request-id").map(_.head.value)
-
-    // Here you will filter `container.logs` using the `id`
-    val logs = container.logs.split("\n").filter(_.contains(id)).mkString("\n")
+    val logs = response.headers
+      .get(ci"x-request-id")
+      .map(_.head.value)
+      .map(id => container.logs.split("\n").filter(_.contains(id)).mkString("\n"))
+      .getOrElse(container.logs)
 
     clues(response, logs)
   }
