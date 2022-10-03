@@ -25,7 +25,7 @@ jobs:
     if: |
       github.event.pull_request.state == 'OPEN' && github.event.pull_request.head.repo.full_name == github.repository &&
         github.event.pull_request.user.login == 'alejandrohdezma-steward[bot]'
-    name: (Scala Steward) Enable auto-merge, run `sbt fix`...
+    name: (Scala Steward) Enable auto-merge
     runs-on: ubuntu-latest
     steps:
       - name: Get the GitHub App installation token
@@ -34,38 +34,10 @@ jobs:
         with:
           token: ${{ secrets.GH_APP_TOKEN }}
 
-      - name: Checkout project
-        uses: actions/checkout@2541b1294d2704b0964813337f33b291d3f8596b # v3.0.3
-        with:
-          token: ${{ steps.github_app.outputs.token }}
-          ref: ${{ github.event.pull_request.head.ref }}
-
       - name: Enable auto-merge for this PR
-        run: gh pr merge --auto --merge ${{github.event.pull_request.number}}
+        run: gh pr merge --auto --merge ${{github.event.pull_request.number}} -R "$GITHUB_REPOSITORY"
         env:
           GITHUB_TOKEN: ${{ steps.github_app.outputs.token }}
-
-      - uses: actions/setup-java@a18c333f3f14249953dab3e186e5e21bf3390f1d # v3.5.1
-        with:
-          distribution: "liberica"
-          java-version: "17"
-          cache: "sbt"
-
-      - name: Run `sbt generateCiFiles`
-        run: sbt generateCiFiles
-
-      - name: Commit changes by `sbt generateCiFiles`
-        uses: alejandrohdezma/actions/commit-and-push@v1
-        with:
-          message: Run `sbt generateCiFiles`
-
-      - name: Run `sbt fix`
-        run: sbt fix
-
-      - name: Commit changes by `sbt fix`
-        uses: alejandrohdezma/actions/commit-and-push@v1
-        with:
-          message: Run `sbt fix`
 
   test:
     needs: [ci-steward]
