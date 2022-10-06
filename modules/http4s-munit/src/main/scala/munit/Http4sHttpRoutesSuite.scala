@@ -53,7 +53,7 @@ import org.http4s.Response
   * @author
   *   José Gutiérrez
   */
-abstract class Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
+trait Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
   /** The HTTP routes being tested.
     *

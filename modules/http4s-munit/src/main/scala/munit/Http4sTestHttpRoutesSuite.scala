@@ -47,7 +47,7 @@ import org.http4s.Response
   *   Jack Treble
   */
 @deprecated("Use Http4sHttpRoutesSuite overriding routes per-test with `withRoutes` instead", since = "0.13.0")
-abstract class Http4sTestHttpRoutesSuite extends Http4sSuite[Request[IO]] {
+trait Http4sTestHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
   /** @inheritdoc */
   override def http4sMUnitNameCreator(
