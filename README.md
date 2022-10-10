@@ -9,6 +9,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 - [Usage](#usage)
   - [Testing `HttpRoutes`](#testing-httproutes)
   - [Testing `AuthedRoutes`](#testing-authedroutes)
+  - [Using a mocked http4s `Client`](#using-a-mocked-http4s-client)
   - [Testing a remote HTTP server](#testing-a-remote-http-server)
   - [Testing an HTTP server running inside a container](#testing-an-http-server-running-inside-a-container)
 - [Other features](#other-features)
@@ -24,7 +25,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.13.0" % Test
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.14.0" % Test
 ```
 
 ## Contributors to this project
@@ -100,6 +101,74 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
     .alias("Overriden routes") { response =>
       assertIO(response.as[String], "Hey")
     }
+
+}
+```
+
+### Using a mocked http4s `Client`
+
+If you want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `ClientSuite`.
+
+It adds two extension methods to the `Client` companion object: `from` and `fixture`.
+
+`Client.from` lets you create a mocked client from a partial function representing routes:
+
+```scala:mdoc:reset:silent
+import org.http4s.client.Client
+
+class ClientSuiteSuite extends munit.ClientSuite {
+
+  val client = Client.from {
+    case GET -> Root / "ping" => Ok("pong")
+  }
+
+}
+```
+
+On the other hand, the class also provides another extension method: `Client.fixture`. This method is inteded to be used to easily create a fixture for testing a class that uses an http4s' `Client`.
+
+Given an algebra like:
+
+```scala:mdoc:reset:silent
+import cats.effect._
+import org.http4s.client.Client
+
+trait PingService[F[_]] {
+
+  def ping(): F[String]
+
+}
+
+object PingService {
+
+  def create[F[_]: Async](client: Client[F]) = Resource.pure(
+    new PingService[F] {
+
+      def ping(): F[String] = client.expect[String]("ping")
+
+    }
+  )
+
+}
+```
+
+You can test it using `ClientSuite` like:
+
+```scala:mdoc:silent
+import cats.effect._
+import org.http4s.client.Client
+
+class PingServiceSuite extends munit.ClientSuite {
+
+  val fixture = Client.fixture(PingService.create(_))
+
+  fixture {
+    case GET -> Root / "ping" => Ok("pong")
+  }.test("PingService.ping works") { service =>
+    val result = service.ping()
+
+    assertIO(result, "pong")
+  }
 
 }
 ```
