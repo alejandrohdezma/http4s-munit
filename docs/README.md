@@ -88,6 +88,74 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 }
 ```
 
+### Using a mocked http4s `Client`
+
+If you want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `ClientSuite`.
+
+It adds two extension methods to the `Client` companion object: `from` and `fixture`.
+
+`Client.from` lets you create a mocked client from a partial function representing routes:
+
+```scala:mdoc:reset:silent
+import org.http4s.client.Client
+
+class ClientSuiteSuite extends munit.ClientSuite {
+
+  val client = Client.from {
+    case GET -> Root / "ping" => Ok("pong")
+  }
+
+}
+```
+
+On the other hand, the class also provides another extension method: `Client.fixture`. This method is inteded to be used to easily create a fixture for testing a class that uses an http4s' `Client`.
+
+Given an algebra like:
+
+```scala:mdoc:reset:silent
+import cats.effect._
+import org.http4s.client.Client
+
+trait PingService[F[_]] {
+
+  def ping(): F[String]
+
+}
+
+object PingService {
+
+  def create[F[_]: Async](client: Client[F]) = Resource.pure(
+    new PingService[F] {
+
+      def ping(): F[String] = client.expect[String]("ping")
+
+    }
+  )
+
+}
+```
+
+You can test it using `ClientSuite` like:
+
+```scala:mdoc:silent
+import cats.effect._
+import org.http4s.client.Client
+
+class PingServiceSuite extends munit.ClientSuite {
+
+  val fixture = Client.fixture(PingService.create(_))
+
+  fixture {
+    case GET -> Root / "ping" => Ok("pong")
+  }.test("PingService.ping works") { service =>
+    val result = service.ping()
+
+    assertIO(result, "pong")
+  }
+
+}
+```
+
 ### Testing a remote HTTP server
 
 In the case you don't want to use static http4s routes, but a running HTTP server, you have available the `HttpSuite`. This suite behaves exactly the same as the previous ones except that you don't provide a `routes` object, but a `baseUri` with the URI of your HTTP server. Any `Request` added in tests will prepend
