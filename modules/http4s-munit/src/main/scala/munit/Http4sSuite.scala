@@ -37,7 +37,7 @@ import org.typelevel.ci.CIString
   * @author
   *   José Gutiérrez
   */
-abstract class Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax {
+trait Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax {
 
   /** Allows altering the name of the generated tests.
     *

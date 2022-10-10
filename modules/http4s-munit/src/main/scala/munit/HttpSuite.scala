@@ -69,7 +69,7 @@ import org.http4s.ember.client.EmberClientBuilder
   * @author
   *   José Gutiérrez
   */
-abstract class HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
+trait HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
 
   /** The base URI for all tests. This URI will prepend the one used in each test's request. */
   def baseUri(): Uri
