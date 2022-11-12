@@ -2,6 +2,8 @@
 # It is automatically updated after every release of https://github.com/alejandrohdezma/sbt-ci
 # If you want to suggest a change, please open a PR or issue in that repository
 
+# This file contains the template for the "auto-generated release notes"
+
 changelog:
   exclude:
     labels:
