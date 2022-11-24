@@ -96,7 +96,6 @@ class LogsSuite extends FunSuite {
     assertNoDiff(obtained, expected)
   }
 
-  @SuppressWarnings(Array("scalafix:Disable.scala.collection.mutable"))
   private def execute[T](implicit classTag: ClassTag[T]): String = {
     val framework = new Framework
 
