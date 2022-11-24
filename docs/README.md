@@ -96,7 +96,7 @@ It adds two extension methods to the `Client` companion object: `from` and `fixt
 
 `Client.from` lets you create a mocked client from a partial function representing routes:
 
-```scala:mdoc:reset:silent
+```scala mdoc:reset:silent
 import org.http4s.client.Client
 
 class ClientSuiteSuite extends munit.ClientSuite {
@@ -112,7 +112,7 @@ On the other hand, the class also provides another extension method: `Client.fix
 
 Given an algebra like:
 
-```scala:mdoc:reset:silent
+```scala mdoc:reset:silent
 import cats.effect._
 import org.http4s.client.Client
 
@@ -124,26 +124,26 @@ trait PingService[F[_]] {
 
 object PingService {
 
-  def create[F[_]: Async](client: Client[F]) = Resource.pure(
+  def create[F[_]: Async](client: Client[F]) =
     new PingService[F] {
 
       def ping(): F[String] = client.expect[String]("ping")
 
     }
-  )
+  
 
 }
 ```
 
 You can test it using `ClientSuite` like:
 
-```scala:mdoc:silent
+```scala mdoc:silent
 import cats.effect._
 import org.http4s.client.Client
 
 class PingServiceSuite extends munit.ClientSuite {
 
-  val fixture = Client.fixture(PingService.create(_))
+  val fixture = Client.fixture(client => Resource.pure(PingService.create(client)))
 
   fixture {
     case GET -> Root / "ping" => Ok("pong")
