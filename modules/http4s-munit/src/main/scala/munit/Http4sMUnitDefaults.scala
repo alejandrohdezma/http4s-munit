@@ -35,8 +35,8 @@ object Http4sMUnitDefaults {
     val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
       case Nil                 => ""
       case List(head)          => s" ($head)"
-      case List(first, second) => s" ($first and $second)"
-      case list                => s"${list.init.mkString(" (", ", ", ", and")} ${list.last})"
+      case List(first, second) => s" ($first and then $second)"
+      case list                => s"${list.init.mkString(" (", ", ", ", and then")} ${list.last})"
     }
 
     val context = request.context match {
