@@ -29,7 +29,8 @@ import org.http4s.ember.client.EmberClientBuilder
 
 /** Base class for suites testing remote HTTP servers.
   *
-  * To use this class you'll need to provide the `Uri` of the remote server by overriding `baseUri`.
+  * You can provide the `Uri` of the remote server by overriding `baseUri`. If you provide one this URI will be used as
+  * base for every test.
   *
   * By default this class uses `Ember` as the client to connect to the server. If you don't want to use this specific
   * client you will need to override the `http4sMUnitClient` value.
@@ -72,7 +73,7 @@ import org.http4s.ember.client.EmberClientBuilder
 trait HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
 
   /** The base URI for all tests. This URI will prepend the one used in each test's request. */
-  def baseUri(): Uri
+  def baseUri(): Uri = Uri()
 
   /** @inheritdoc */
   override def http4sMUnitNameCreator(
@@ -112,11 +113,17 @@ trait HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
 
   }
 
+  @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
   def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    ResourceFixture(http4sMUnitClient.map(client => req => client.run(req.withUri(baseUri().resolve(req.uri)))))
+    ResourceFixture {
+      http4sMUnitClient.map { client => request =>
+        if (baseUri() == Uri()) client.run(request)
+        else client.run(request.withUri(baseUri().resolve(request.uri)))
+      }
+    }
 
   /** Declares a test for the provided request. That request will be executed using the provided client in `httpClient`
-    * to the server indicated in `baseUri`.
+    * (and prepending the `baseUri` URI if it is not empty).
     *
     * @example
     *   {{{
