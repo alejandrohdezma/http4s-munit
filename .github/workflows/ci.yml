@@ -12,7 +12,7 @@
 # - It will automatically label PRs based on head branch.
 # - It will automatically enable auto-merge on `Scala Steward` PRs.
 
-name: CI (Pull Requests)
+name: CI
 
 on:
   pull_request:
