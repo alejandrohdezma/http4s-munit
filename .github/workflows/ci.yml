@@ -38,16 +38,10 @@ jobs:
     name: (Scala Steward) Enable auto-merge
     runs-on: ubuntu-latest
     steps:
-      - name: Get the GitHub App installation token
-        uses: alejandrohdezma/actions/github-app-token@v1
-        id: github_app
-        with:
-          token: ${{ secrets.GH_APP_TOKEN }}
-
       - name: Enable auto-merge for this PR
         run: gh pr merge --auto --merge ${{github.event.pull_request.number}} -R "$GITHUB_REPOSITORY"
         env:
-          GITHUB_TOKEN: ${{ steps.github_app.outputs.token }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   test:
     needs: [ci-steward]
