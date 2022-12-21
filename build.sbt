@@ -12,7 +12,7 @@ lazy val documentation = project
   .enablePlugins(MdocPlugin)
   .settings(mdocOut := file("."))
   .dependsOn(`http4s-munit` % "compile->test")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.12")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.13")
 
 lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
