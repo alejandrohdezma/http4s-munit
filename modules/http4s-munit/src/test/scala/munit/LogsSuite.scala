@@ -16,6 +16,7 @@
 
 package munit
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 import cats.effect.IO
@@ -105,23 +106,20 @@ class LogsSuite extends FunSuite {
 
     val tasks = runner.tasks(Array(taskDef))
 
-    val stringBuilder = new StringBuilder()
+    val buffer = ListBuffer.empty[String]
 
     val eventHandler: EventHandler = event => {
-      stringBuilder
-        .append("==> ")
-        .append(event.status())
-        .append(" ")
-        .append(event.fullyQualifiedName())
-        .append(if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
-        .append("\n")
-      ()
+      buffer += "==> "
+      buffer += event.status().name()
+      buffer += " "
+      buffer += event.fullyQualifiedName()
+      buffer += (if (event.throwable().isDefined()) s" at ${event.throwable().get().getMessage()}" else "")
+      buffer += "\n"
     }
 
     tasks.foreach(_.execute(eventHandler, Array()))
 
-    stringBuilder
-      .result()
+    buffer.mkString
       .replace("\"\"\"", "'''")
       .replaceAll("\\.scala:\\d+", ".scala")
       .replaceAll("""\d+:\n""", "")
