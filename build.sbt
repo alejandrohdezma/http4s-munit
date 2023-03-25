@@ -16,6 +16,7 @@ lazy val documentation = project
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.14")
 
 lazy val `http4s-munit` = module
+  .settings(Test / fork := true)
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.18")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.18")
