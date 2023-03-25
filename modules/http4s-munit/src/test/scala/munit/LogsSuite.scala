@@ -37,7 +37,7 @@ class LogsSuite extends FunSuite {
 
   override def munitIgnore: Boolean = !scala.util.Properties.versionNumberString.startsWith("2.13")
 
-  private val thisFile = s"${sys.props("user.dir")}/modules/http4s-munit/src/test/scala/munit/LogsSuite.scala"
+  private val thisFile = s"${sys.props("user.dir")}/src/test/scala/munit/LogsSuite.scala"
 
   test("test names are correctly generated from an Http4sMUnitTestCreator") {
     val obtained = execute[LogsSuite.SimpleSuite]
