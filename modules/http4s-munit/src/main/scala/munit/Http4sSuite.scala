@@ -24,6 +24,7 @@ import cats.syntax.all._
 import fs2.Stream
 import io.circe.parser.parse
 import org.http4s.Header
+import org.http4s.Request
 import org.http4s.Response
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl.Http4sDsl
@@ -37,7 +38,7 @@ import org.typelevel.ci.CIString
   * @author
   *   José Gutiérrez
   */
-trait Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax {
+trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax {
 
   /** Allows altering the name of the generated tests.
     *
@@ -77,7 +78,7 @@ trait Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4
     *   the test's name
     */
   def http4sMUnitNameCreator(
-      request: Request,
+      request: Request[IO],
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig
@@ -143,9 +144,9 @@ trait Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4
   }
 
   case class Http4sMUnitTestCreator(
-      request: Request,
-      http4sMUnitFunFixture: SyncIO[FunFixture[Request => Resource[IO, Response[IO]]]],
-      followingRequests: List[(String, Response[IO] => IO[Request])] = Nil,
+      request: Request[IO],
+      http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]],
+      followingRequests: List[(String, Response[IO] => IO[Request[IO]])] = Nil,
       testOptions: TestOptions = TestOptions(""),
       config: Http4sMUnitConfig = Http4sMUnitConfig.default
   ) {
@@ -191,7 +192,7 @@ trait Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4
       * If this is the last `andThen` call, the response provided to the test will be the one obtained from executing
       * this request
       */
-    def andThen(alias: String)(f: Response[IO] => IO[Request]): Http4sMUnitTestCreator =
+    def andThen(alias: String)(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator =
       copy(followingRequests = followingRequests :+ ((alias, f)))
 
     /** Provide a new request created from the response of the previous request.
@@ -199,7 +200,7 @@ trait Http4sSuite[Request] extends CatsEffectSuite with Http4sDsl[IO] with Http4
       * If this is the last `andThen` call, the response provided to the test will be the one obtained from executing
       * this request
       */
-    def andThen(f: Response[IO] => IO[Request]): Http4sMUnitTestCreator = andThen("")(f)
+    def andThen(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator = andThen("")(f)
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
       http4sMUnitFunFixture.test(

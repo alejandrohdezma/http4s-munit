@@ -18,12 +18,13 @@ package munit
 
 import cats.Show
 import cats.effect.IO
+import cats.syntax.all._
+import cats.effect.syntax.all._
 import cats.effect.Resource
 import cats.effect.SyncIO
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
-import org.http4s.ContextRequest
 import org.http4s.Request
 import org.http4s.Response
 
@@ -53,19 +54,19 @@ import org.http4s.Response
   * }
   *   }}}
   */
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
+abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
   /** The HTTP routes being tested */
   val routes: AuthedRoutes[A, IO]
 
   /** @inheritdoc */
   override def http4sMUnitNameCreator(
-      request: AuthedRequest[IO, A],
+      request: Request[IO],
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig
   ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
-    request,
+    AuthedRequest(request.getContext, request),
     followingRequests,
     testOptions,
     config,
@@ -74,11 +75,11 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   implicit class Request2AuthedRequest(request: Request[IO]) {
 
-    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
-    def context(context: A): AuthedRequest[IO, A] = AuthedRequest(context, request)
+    /** Alias for adding a request's context. */
+    def context(context: A): Request[IO] = request.withAttribute(RequestContext.key, RequestContext(context))
 
-    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
-    def ->(a: A): AuthedRequest[IO, A] = context(a)
+    /** Alias for adding a request's context. */
+    def ->(a: A): Request[IO] = context(a)
 
   }
 
@@ -86,9 +87,19 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
     /** Allows overriding the routes used when running this test. */
     def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = creator.copy(
-      http4sMUnitFunFixture =
-        SyncIO.pure(FunFixture(_ => req => newRoutes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
+      http4sMUnitFunFixture = ResourceFixture(
+        Resource.pure(request => newRoutes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
+      )
     )
+
+  }
+
+  implicit class RequestContextOps(request: Request[IO]) {
+
+    def getContext: A = request.attributes
+      .lookup(RequestContext.key)
+      .getOrElse(fail("Auth context not found on request, remember to add one with `.context`", clues(request)))
+      .as[A]
 
   }
 
@@ -100,8 +111,9 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   }
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
-    SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
+  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] = ResourceFixture(
+    Resource.pure(request => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
+  )
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *
@@ -126,7 +138,11 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
     * }
     *   }}}
     */
-  def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator =
+  def test(request: Request[IO]): Http4sMUnitTestCreator = {
+    if (!request.attributes.contains(RequestContext.key))
+      fail("Auth context not found on request, remember to add one with `.context`", clues(request))
+
     Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+  }
 
 }

@@ -16,13 +16,16 @@
 
 package munit
 
+import cats.effect.IO
+
 import org.http4s.Header
+import org.http4s.Request
 import org.typelevel.ci._
 
-class HeaderInterpolatorSuite extends Http4sSuite[String] {
+class HeaderInterpolatorSuite extends Http4sSuite {
 
   override def http4sMUnitNameCreator(
-      request: String,
+      request: Request[IO],
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig
