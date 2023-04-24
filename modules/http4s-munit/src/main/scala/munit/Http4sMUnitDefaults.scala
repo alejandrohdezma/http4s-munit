@@ -16,17 +16,16 @@
 
 package munit
 
-import cats.Show
 import cats.effect.IO
 import cats.syntax.all._
 
-import org.http4s.ContextRequest
+import org.http4s.Request
 import org.http4s.Uri
 
 object Http4sMUnitDefaults {
 
-  def http4sMUnitNameCreator[A: Show](
-      request: ContextRequest[IO, A],
+  def http4sMUnitNameCreator(
+      request: Request[IO],
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig,
@@ -39,7 +38,7 @@ object Http4sMUnitDefaults {
       case list                => s"${list.init.mkString(" (", ", ", ", and then")} ${list.last})"
     }
 
-    val context = request.req.attributes.lookup(RequestContext.key).map(_.asString).filterNot(_.isEmpty())
+    val context = request.attributes.lookup(RequestContext.key).map(_.asString).filterNot(_.isEmpty())
 
     val reps = config.repetitions match {
       case Some(rep) if rep > 1 =>
@@ -47,7 +46,7 @@ object Http4sMUnitDefaults {
       case _ => ""
     }
 
-    val nameWithoutReplacements = s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}" +
+    val nameWithoutReplacements = s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}" +
       s"$clue${context.fold("")(" as " + _)}$reps"
 
     replacements.foldLeft(nameWithoutReplacements) { case (name, (value, replacement)) =>

@@ -20,7 +20,6 @@ import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
 
-import org.http4s.ContextRequest
 import org.http4s.HttpRoutes
 import org.http4s.Request
 import org.http4s.Response
@@ -64,21 +63,6 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
     * ```
     */
   val routes: HttpRoutes[IO]
-
-  /** @inheritdoc */
-  override def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String =
-    Http4sMUnitDefaults.http4sMUnitNameCreator(
-      ContextRequest((), request),
-      followingRequests,
-      testOptions,
-      config,
-      http4sMUnitNameCreatorReplacements()
-    )
 
   implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
 

@@ -20,7 +20,6 @@ import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
 
-import org.http4s.ContextRequest
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
@@ -74,21 +73,6 @@ trait HttpSuite extends Http4sSuite with CatsEffectFunFixtures {
 
   /** The base URI for all tests. This URI will prepend the one used in each test's request. */
   def baseUri(): Uri = Uri()
-
-  /** @inheritdoc */
-  override def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String =
-    Http4sMUnitDefaults.http4sMUnitNameCreator(
-      ContextRequest((), request),
-      followingRequests,
-      testOptions,
-      config,
-      http4sMUnitNameCreatorReplacements()
-    )
 
   /** This client is used under the hood to execute the requests. */
   def http4sMUnitClient: Resource[IO, Client[IO]] = try

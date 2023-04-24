@@ -18,10 +18,9 @@ package munit
 
 import cats.Show
 import cats.effect.IO
-import cats.syntax.all._
-import cats.effect.syntax.all._
 import cats.effect.Resource
 import cats.effect.SyncIO
+import cats.effect.syntax.all._
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
@@ -58,20 +57,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
   /** The HTTP routes being tested */
   val routes: AuthedRoutes[A, IO]
-
-  /** @inheritdoc */
-  override def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
-    AuthedRequest(request.getContext, request),
-    followingRequests,
-    testOptions,
-    config,
-    http4sMUnitNameCreatorReplacements()
-  )
 
   implicit class Request2AuthedRequest(request: Request[IO]) {
 

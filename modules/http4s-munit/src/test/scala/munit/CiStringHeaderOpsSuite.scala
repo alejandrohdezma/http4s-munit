@@ -24,12 +24,6 @@ import org.typelevel.ci._
 
 class HeaderInterpolatorSuite extends Http4sSuite {
 
-  override def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String = fail("This should no be called")
 
   test("header interpolator creates a valid raw header") {
     val header = ci"my-header" := "my-value"

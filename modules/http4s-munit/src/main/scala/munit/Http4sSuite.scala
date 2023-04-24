@@ -82,7 +82,13 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig
-  ): String
+  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
+    request,
+    followingRequests,
+    testOptions,
+    config,
+    http4sMUnitNameCreatorReplacements()
+  )
 
   /** List of replacements that will be applied to the result of `http4sMUnitNameCreator` using `String#replaceAll` */
   def http4sMUnitNameCreatorReplacements(): Seq[(String, String)] = Nil
