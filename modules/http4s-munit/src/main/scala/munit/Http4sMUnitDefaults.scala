@@ -39,10 +39,7 @@ object Http4sMUnitDefaults {
       case list                => s"${list.init.mkString(" (", ", ", ", and then")} ${list.last})"
     }
 
-    val context = request.context match {
-      case _: Unit => None
-      case context => context.show.some.filterNot(_.isEmpty())
-    }
+    val context = request.req.attributes.lookup(RequestContext.key).map(_.asString).filterNot(_.isEmpty())
 
     val reps = config.repetitions match {
       case Some(rep) if rep > 1 =>
