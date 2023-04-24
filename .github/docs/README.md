@@ -60,7 +60,7 @@ munit.MyHttpRoutesSuite:0s
 
 ### Testing `AuthedRoutes`
 
-If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use the `Http4sAuthedRoutesSuite`. It is completely similar to the previous suite, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to provide `AuthedRequest` instead of `Request` in the `test` definition. We can do this using its own constructor or by using our extension function `context` or `->`:
+If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use the `Http4sAuthedRoutesSuite`. It is completely similar to the previous suite, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to ensure we provide the context in the request by using our extension function `context`:
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
@@ -79,7 +79,7 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
   }
 
   // You can also override routes per-test
-  test(GET(uri"hello" / "Jose") -> "alex")
+  test(GET(uri"hello" / "Jose").context("alex"))
     .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
     .alias("Overriden routes") { response =>
       assertIO(response.as[String], "Hey")

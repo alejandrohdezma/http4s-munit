@@ -79,6 +79,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
     def context(context: A): Request[IO] = request.withAttribute(RequestContext.key, RequestContext(context))
 
     /** Alias for adding a request's context. */
+    @deprecated("Use `.context` instead", since = "0.16.0")
     def ->(a: A): Request[IO] = context(a)
 
   }
