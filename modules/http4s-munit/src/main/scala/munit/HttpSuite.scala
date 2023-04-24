@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -97,8 +97,9 @@ trait HttpSuite extends Http4sSuite with CatsEffectFunFixtures {
 
   }
 
+  /** @inheritdoc */
   @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     ResourceFunFixture {
       http4sMUnitClient.map { client => (request: Request[IO]) =>
         if (baseUri() == Uri()) client.run(request)

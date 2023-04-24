@@ -20,7 +20,7 @@ import cats.Show
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
-import cats.effect.syntax.all._
+import cats.syntax.all._
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
@@ -73,8 +73,9 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
     /** Allows overriding the routes used when running this test. */
     def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = creator.copy(
-      http4sMUnitFunFixture = ResourceFixture(
-        Resource.pure(request => newRoutes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
+      http4sMUnitFunFixture = ResourceFunFixture(
+        ((request: Request[IO]) => newRoutes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
+          .pure[Resource[IO, *]]
       )
     )
 
@@ -97,9 +98,12 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
   }
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] = ResourceFixture(
-    Resource.pure(request => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
-  )
+  /** @inheritdoc */
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+    ResourceFunFixture(
+      ((request: Request[IO]) => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
+        .pure[Resource[IO, *]]
+    )
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *

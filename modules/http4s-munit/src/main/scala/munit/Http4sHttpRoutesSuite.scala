@@ -81,7 +81,8 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
 
   }
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+  /** @inheritdoc */
+  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.

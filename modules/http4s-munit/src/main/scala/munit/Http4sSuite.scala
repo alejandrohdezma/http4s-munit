@@ -105,6 +105,9 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
   def http4sMUnitResponseClueCreator(response: Response[IO]): Clues =
     clues(response.headers.show, response.status.show)
 
+  /** Fixture to run a request against this suite */
+  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]]
+
   implicit class ResponseCluesOps(private val response: Response[IO]) {
 
     /** Transform a response into suite clues
