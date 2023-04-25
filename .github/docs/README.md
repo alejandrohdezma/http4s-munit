@@ -90,16 +90,16 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 
 ### Using a mocked http4s `Client`
 
-If you want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `ClientSuite`.
+If you want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `Http4sMUnitSyntax` (it also requires extending `CatsEffectSuite`).
 
-It adds two extension methods to the `Client` companion object: `from` and `fixture`.
+It includes a handful of utilities among which are two extension methods to the `Client` companion object: `from` and `partialFixture`.
 
 `Client.from` lets you create a mocked client from a partial function representing routes:
 
 ```scala mdoc:reset:silent
 import org.http4s.client.Client
 
-class ClientSuiteSuite extends munit.ClientSuite {
+class ClientSuiteSuite extends munit.CatsEffectSuite with munit.Http4sMUnitSyntax {
 
   val client = Client.from {
     case GET -> Root / "ping" => Ok("pong")
@@ -108,7 +108,7 @@ class ClientSuiteSuite extends munit.ClientSuite {
 }
 ```
 
-On the other hand, the class also provides another extension method: `Client.fixture`. This method is inteded to be used to easily create a fixture for testing a class that uses an http4s' `Client`.
+On the other hand, the class also provides another extension method: `Client.partialFixture`. This method is inteded to be used to easily create a fixture for testing a class that uses an http4s' `Client`.
 
 Given an algebra like:
 
@@ -135,15 +135,15 @@ object PingService {
 }
 ```
 
-You can test it using `ClientSuite` like:
+You can test it using `Http4sMUnitSyntax` like:
 
 ```scala mdoc:silent
 import cats.effect._
 import org.http4s.client.Client
 
-class PingServiceSuite extends munit.ClientSuite {
+class PingServiceSuite extends munit.CatsEffectSuite with munit.Http4sMUnitSyntax {
 
-  val fixture = Client.fixture(client => Resource.pure(PingService.create(client)))
+  val fixture = Client.partialFixture(client => Resource.pure(PingService.create(client)))
 
   fixture {
     case GET -> Root / "ping" => Ok("pong")

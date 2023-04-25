@@ -25,15 +25,9 @@ import cats.syntax.all._
 
 import fs2.Stream
 import io.circe.parser.parse
-import org.http4s.Header
 import org.http4s.Request
 import org.http4s.Response
-import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.client.dsl.Http4sClientDsl
-import org.http4s.dsl.Http4sDsl
-import org.http4s.syntax.AllSyntax
-import org.typelevel.ci.CIString
 
 /** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
   *
@@ -42,7 +36,7 @@ import org.typelevel.ci.CIString
   * @author
   *   José Gutiérrez
   */
-trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax {
+trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
 
   /** Allows altering the name of the generated tests.
     *
@@ -158,32 +152,6 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
               .replaceAll(""" : null""", " : " + Console.MAGENTA + "null" + Console.RESET)
           else json
       )
-
-  implicit final class CiStringHeaderOps(ci: CIString) {
-
-    /** Creates a `Header.Raw` value from a case-insensitive string. */
-    def :=(value: String): Header.Raw = Header.Raw(ci, value)
-
-  }
-
-  def localhost = uri"http://localhost"
-
-  implicit class ClientWithBaseUriOps(client: Client[IO]) {
-
-    /** Prepends the provided `Uri` to every request made by this client. */
-    def withBaseUri(uri: Uri): Client[IO] = Client(request => client.run(request.withUri(uri.resolve(request.uri))))
-
-  }
-
-  implicit class UriWithPort(uri: Uri) {
-
-    /** Allows changing the URIs port */
-    def withPort(port: Int): Uri = {
-      val authority = uri.authority.fold(Uri.Authority(port = Some(port)))(_.copy(port = Some(port)))
-      uri.copy(authority = Some(authority))
-    }
-
-  }
 
   case class Http4sMUnitTestCreator(
       request: Request[IO],

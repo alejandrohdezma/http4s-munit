@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,52 +17,21 @@
 package munit
 
 import cats.effect.IO
-import cats.effect.Resource
 import cats.effect.SyncIO
+import cats.effect.kernel.Resource
 
-import org.http4s._
+import org.http4s.Header
+import org.http4s.HttpApp
+import org.http4s.Request
+import org.http4s.Response
+import org.http4s.Uri
 import org.http4s.client.Client
-import org.http4s.dsl.Http4sDslBinCompat
+import org.http4s.client.dsl.Http4sClientDsl
+import org.http4s.dsl.Http4sDsl
+import org.http4s.syntax.AllSyntax
+import org.typelevel.ci.CIString
 
-/** Base class for suites testing classes that need a `Client` instance.
-  *
-  * It adds two extension methods to the `Client` companion object: `from` and `fixture`.
-  *
-  * See method docs for more information on how to use them.
-  *
-  * It also brings the http-dsl into scope, so you don't need to import it yourself.
-  *
-  * @example
-  *   {{{
-  * import cats.effect._
-  * import org.http4s.client.Client
-  *
-  * class PingService[F[_]: Async](client: Client[F]) {
-  *
-  *   def ping(): F[String] = client.expect[String]("ping")
-  *
-  * }
-  *
-  * class PingServiceSuite extends munit.ClientSuite {
-  *
-  *   val fixture = Client.fixture(client => Resource.pure(new PingService[IO](client)))
-  *
-  *   fixture {
-  *     case GET -> Root / "ping" => Ok("pong")
-  *   }.test("PingService.ping works") { service =>
-  *     val result = service.ping()
-  *
-  *     assertIO(result, "pong")
-  *   }
-  *
-  * }
-  *   }}}
-  *
-  * @author
-  *   Alejandro Hernández
-  */
-@deprecated("Extend Http4sMUnitSyntax instead", since = "0.16.0")
-trait ClientSuite extends CatsEffectSuite with Http4sDslBinCompat[IO] {
+trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax { self: CatsEffectSuite =>
 
   implicit class ClientTypeOps(t: Client.type) {
 
@@ -92,10 +61,37 @@ trait ClientSuite extends CatsEffectSuite with Http4sDslBinCompat[IO] {
       * }
       *   }}}
       */
-    def fixture[A](
+    def partialFixture[A](
         f: Client[IO] => Resource[IO, A]
     ): PartialFunction[Request[IO], IO[Response[IO]]] => SyncIO[FunFixture[A]] =
       pf => ResourceFunFixture(f(from(pf)))
+
+  }
+
+  implicit final class CiStringHeaderOps(ci: CIString) {
+
+    /** Creates a `Header.Raw` value from a case-insensitive string. */
+    def :=(value: String): Header.Raw = Header.Raw(ci, value)
+
+  }
+
+  /** Alias for `http://localhost` */
+  def localhost = uri"http://localhost"
+
+  implicit class ClientWithBaseUriOps(client: Client[IO]) {
+
+    /** Prepends the provided `Uri` to every request made by this client. */
+    def withBaseUri(uri: Uri): Client[IO] = Client(request => client.run(request.withUri(uri.resolve(request.uri))))
+
+  }
+
+  implicit class UriWithPort(uri: Uri) {
+
+    /** Allows changing the URIs port */
+    def withPort(port: Int): Uri = {
+      val authority = uri.authority.fold(Uri.Authority(port = Some(port)))(_.copy(port = Some(port)))
+      uri.copy(authority = Some(authority))
+    }
 
   }
 
