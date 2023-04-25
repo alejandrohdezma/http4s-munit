@@ -253,8 +253,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
         val numRepetitions     = config.repetitions.getOrElse(1)
         val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
         Stream
-          .emits(1 to numRepetitions)
-          .covary[IO]
+          .range[IO, Int](1, numRepetitions + 1)
           .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
             followingRequests
               .foldLeft(client(request)) { (previousRequest, nextRequest) =>
