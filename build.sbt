@@ -25,7 +25,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.5")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.7" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.18" % Test)
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.14" % Test)
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.15" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.18" % Test)
   .settings(
     libraryDependencies ++= CrossVersion
