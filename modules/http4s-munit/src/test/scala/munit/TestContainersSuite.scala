@@ -32,7 +32,7 @@ class TestContainersSuite extends munit.Http4sSuite {
   /** This will start/stop a hello server before/after every test */
   override def http4sMUnitClientFixture = ResourceFunFixture {
     Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
-      EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
+      EmberClientBuilder.default[IO].build.map(_.withUpdatedUri(localhost.withPort(container.mappedPort(80)).resolve))
   }
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
