@@ -21,7 +21,6 @@ import scala.annotation.nowarn
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
-import cats.effect.syntax.all._
 import cats.syntax.all._
 
 import io.circe.parser.parse

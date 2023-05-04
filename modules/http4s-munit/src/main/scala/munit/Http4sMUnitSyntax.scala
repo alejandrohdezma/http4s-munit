@@ -104,14 +104,14 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   implicit final class HttpRoutesToFixture(httpRoutes: HttpRoutes[IO]) {
 
-    /** Transforms the provided routes into an http4s' `Client`. */
+    /** Transforms the provided routes into an http4s' `Client` fixture. */
     def asFixture: SyncIO[FunFixture[Client[IO]]] = httpRoutes.orNotFound.asFixture
 
   }
 
   implicit final class AuthedRoutesToFixture[A](authedRoutes: AuthedRoutes[A, IO]) {
 
-    /** Transforms the provided routes into an http4s' `Client`.
+    /** Transforms the provided routes into an http4s' `Client` fixture.
       *
       * It uses `Request.getContext` to create the `AuthedRequest`.
       */
@@ -122,7 +122,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   implicit final class HttpAppToFixture[A](httpApp: HttpApp[IO]) {
 
-    /** Transforms the provided app into an http4s' `Client`. */
+    /** Transforms the provided app into an http4s' `Client` fixture. */
     def asFixture: SyncIO[FunFixture[Client[IO]]] =
       ResourceFunFixture(Client.fromHttpApp(httpApp).pure[Resource[IO, *]])
 
@@ -135,6 +135,9 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
     /** Applies a method that updates the requests's `Uri` on every request. */
     def withUpdatedUri(f: Uri => Uri): Client[IO] = Client(request => client.run(request.withUri(f(request.uri))))
+
+    /** Transforms the provided client into a `FunFixture`. */
+    def asFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture(client.pure[Resource[IO, *]])
 
   }
 
