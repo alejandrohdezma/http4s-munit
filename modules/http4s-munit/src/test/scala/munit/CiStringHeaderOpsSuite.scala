@@ -17,17 +17,15 @@
 package munit
 
 import cats.effect.IO
-import cats.effect.Resource
 import cats.effect.SyncIO
 
 import org.http4s.Header
-import org.http4s.Request
-import org.http4s.Response
+import org.http4s.client.Client
 import org.typelevel.ci._
 
 class HeaderInterpolatorSuite extends Http4sSuite {
 
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
     fail("This should not be called")
 
   test("header interpolator creates a valid raw header") {

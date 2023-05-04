@@ -25,7 +25,7 @@ import cats.syntax.all._
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
 import org.http4s.Request
-import org.http4s.Response
+import org.http4s.client.Client
 
 /** Base class for suites testing `AuthedRoutes`.
   *
@@ -99,11 +99,10 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    ResourceFunFixture(
-      ((request: Request[IO]) => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
-        .pure[Resource[IO, *]]
-    )
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture(
+    Client[IO](request => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
+      .pure[Resource[IO, *]]
+  )
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *

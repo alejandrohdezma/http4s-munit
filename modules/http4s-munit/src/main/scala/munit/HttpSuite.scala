@@ -21,7 +21,6 @@ import cats.effect.Resource
 import cats.effect.SyncIO
 
 import org.http4s.Request
-import org.http4s.Response
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
@@ -99,12 +98,11 @@ trait HttpSuite extends Http4sSuite with CatsEffectFunFixtures {
 
   /** @inheritdoc */
   @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    ResourceFunFixture {
-      http4sMUnitClient.map { client => (request: Request[IO]) =>
-        if (baseUri() == Uri()) client.run(request)
-        else client.run(request.withUri(baseUri().resolve(request.uri)))
-      }
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
+    http4sMUnitClient.map { client =>
+      if (baseUri() == Uri()) client
+      else Client((request: Request[IO]) => client.run(request.withUri(baseUri().resolve(request.uri))))
     }
+  }
 
 }

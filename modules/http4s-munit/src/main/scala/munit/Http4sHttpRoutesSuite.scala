@@ -19,10 +19,11 @@ package munit
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
+import cats.syntax.all._
 
 import org.http4s.HttpRoutes
 import org.http4s.Request
-import org.http4s.Response
+import org.http4s.client.Client
 
 /** Base class for suites testing `HttpRoutes`.
   *
@@ -68,8 +69,9 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
 
     /** Allows overriding the routes used when running this test. */
     def withRoutes(newRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator = creator.copy(
-      http4sMUnitFunFixture =
-        SyncIO.pure(FunFixture(_ => req => newRoutes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
+      http4sMUnitFunFixture = ResourceFunFixture {
+        ((request: Request[IO]) => newRoutes.orNotFound.run(request).toResource).pure[Resource[IO, *]]
+      }
     )
 
   }
@@ -82,7 +84,7 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+    ResourceFunFixture(Client[IO](request => routes.orNotFound.run(request).toResource).pure[Resource[IO, *]])
 
 }

@@ -28,6 +28,7 @@ import io.circe.parser.parse
 import org.http4s.Header
 import org.http4s.Request
 import org.http4s.Response
+import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl.Http4sDsl
 import org.http4s.syntax.AllSyntax
@@ -108,7 +109,17 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
     clues(response.headers.show, response.status.show)
 
   /** Fixture to run a request against this suite */
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]]
+  @deprecated("Use `http4sMUnitClientFixture` instead", since = "0.16.0")
+  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
+    http4sMUnitClientFixture.map { fixture =>
+      FunFixture.async(
+        setup = options => fixture.setup(options).map(_.run _),
+        teardown = f => fixture.teardown(Client.apply(f))
+      )
+    }
+
+  /** Fixture that creates the client which will be used to execute this suite's requests. */
+  def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]]
 
   implicit class ResponseCluesOps(private val response: Response[IO]) {
 
