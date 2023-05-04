@@ -28,6 +28,7 @@ import io.circe.parser.parse
 import org.http4s.Header
 import org.http4s.Request
 import org.http4s.Response
+import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl.Http4sDsl
@@ -166,6 +167,13 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
   }
 
   def localhost = uri"http://localhost"
+
+  implicit class ClientWithBaseUriOps(client: Client[IO]) {
+
+    /** Prepends the provided `Uri` to every request made by this client. */
+    def withBaseUri(uri: Uri): Client[IO] = Client(request => client.run(request.withUri(uri.resolve(request.uri))))
+
+  }
 
   implicit class UriWithPort(uri: Uri) {
 
