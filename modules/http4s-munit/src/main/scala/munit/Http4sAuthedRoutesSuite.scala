@@ -18,11 +18,8 @@ package munit
 
 import cats.Show
 import cats.effect.IO
-import cats.effect.Resource
 import cats.effect.SyncIO
-import cats.syntax.all._
 
-import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
 import org.http4s.Request
 import org.http4s.client.Client
@@ -69,13 +66,8 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
 
     /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = {
-      val client = Client[IO] { request =>
-        newRoutes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource
-      }
-
-      creator.copy(executor = options => body => test(options)(body(client)))
-    }
+    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator =
+      creator.copy(executor = newRoutes.asFixture.test)
 
   }
 
@@ -88,10 +80,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
-    Client[IO](request => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
-      .pure[Resource[IO, *]]
-  }
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = routes.asFixture
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *

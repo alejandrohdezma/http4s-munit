@@ -17,9 +17,7 @@
 package munit
 
 import cats.effect.IO
-import cats.effect.Resource
 import cats.effect.SyncIO
-import cats.syntax.all._
 
 import org.http4s.HttpRoutes
 import org.http4s.client.Client
@@ -67,11 +65,8 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
   implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
 
     /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator = {
-      val client = Client[IO](newRoutes.orNotFound.run(_).toResource)
-
-      creator.copy(executor = options => body => test(options)(body(client)))
-    }
+    def withRoutes(newRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator =
+      creator.copy(executor = newRoutes.asFixture.test)
 
   }
 
@@ -83,7 +78,6 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
-    ResourceFunFixture(Client[IO](routes.orNotFound.run(_).toResource).pure[Resource[IO, *]])
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = routes.asFixture
 
 }
