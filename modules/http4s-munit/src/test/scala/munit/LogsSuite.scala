@@ -131,9 +131,9 @@ class LogsSuite extends FunSuite {
 
 object LogsSuite {
 
-  class SimpleSuite extends Http4sHttpRoutesSuite {
+  class SimpleSuite extends Http4sSuite {
 
-    val routes: HttpRoutes[IO] = HttpRoutes.pure(Response())
+    override def http4sMUnitClientFixture = HttpRoutes.pure[IO](Response()).asFixture
 
     test(GET(uri"posts"))(_ => ())
 
@@ -158,9 +158,10 @@ object LogsSuite {
 
   }
 
-  class JsonSuite extends Http4sHttpRoutesSuite {
+  class JsonSuite extends Http4sSuite {
 
-    val routes: HttpRoutes[IO] = HttpRoutes.pure(Response().withEntity("""{"id": 1, "name": "Jose"}"""))
+    override def http4sMUnitClientFixture =
+      HttpRoutes.pure[IO](Response().withEntity("""{"id": 1, "name": "Jose"}""")).asFixture
 
     test(GET(uri"posts"))(r => assertEquals(r.status.code, 204))
 

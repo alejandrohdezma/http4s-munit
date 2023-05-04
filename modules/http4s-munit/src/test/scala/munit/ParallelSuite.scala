@@ -23,9 +23,10 @@ import cats.syntax.eq._
 
 import org.http4s._
 
-class ParallelSuite extends Http4sHttpRoutesSuite {
+class ParallelSuite extends Http4sSuite {
 
-  override val routes: HttpRoutes[IO] = HttpRoutes.pure(Response().withEntity("hello!"))
+  override def http4sMUnitClientFixture =
+    HttpRoutes.pure[IO](Response().withEntity("hello!")).asFixture
 
   // `repeat`/`parallel`
 

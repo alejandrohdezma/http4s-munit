@@ -50,6 +50,7 @@ import org.http4s.client.Client
   * @author
   *   José Gutiérrez
   */
+@deprecated("Use `Http4sSuite` overriding `http4sMUnitClientFixture` instead", since = "0.16.0")
 trait Http4sHttpRoutesSuite extends Http4sSuite {
 
   /** The HTTP routes being tested.

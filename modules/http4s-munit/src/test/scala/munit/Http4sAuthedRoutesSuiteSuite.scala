@@ -20,12 +20,14 @@ import cats.effect.IO
 
 import org.http4s.AuthedRoutes
 
-class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
+class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
 
-  override val routes: org.http4s.AuthedRoutes[String, IO] = AuthedRoutes.of {
-    case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
-    case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
-  }
+  override def http4sMUnitClientFixture = AuthedRoutes
+    .of[String, IO] {
+      case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
+      case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
+    }
+    .asFixture
 
   test(GET(uri"/hello").context("jose")).alias("Test 1") { response =>
     assertIO(response.as[String], "jose: Hi")

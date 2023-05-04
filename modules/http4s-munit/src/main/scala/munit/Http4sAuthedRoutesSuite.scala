@@ -50,6 +50,7 @@ import org.http4s.client.Client
   * }
   *   }}}
   */
+@deprecated("Use `Http4sSuite` overriding `http4sMUnitClientFixture` instead", since = "0.16.0")
 abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
   /** The HTTP routes being tested */

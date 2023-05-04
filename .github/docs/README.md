@@ -19,21 +19,24 @@ libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "@VERSION@" % T
 
 ## Usage
 
+This library provides a new type of suite (`Http4sSuite`) that you can use for
+several things:
+
 ### Testing `HttpRoutes`
 
-We can use the `Http4sHttpRoutesSuite` to write tests for an `HttpRoutes` using `Request[IO]` values easily:
+We can use the `Http4Suite` to write tests for an `HttpRoutes` using `Request[IO]` values easily:
 
 ```scala mdoc:silent
 import cats.effect.IO
 
 import org.http4s._
 
-class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
+class MyHttpRoutesSuite extends munit.Http4sSuite {
 
-  override val routes: HttpRoutes[IO] = HttpRoutes.of {
+  override def http4sMUnitClientFixture = HttpRoutes.of[IO] {
     case GET -> Root / "hello"        => Ok("Hi")
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
-  }
+  }.asFixture
 
   test(GET(uri"hello" / "Jose")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "Hi Jose")
@@ -60,19 +63,19 @@ munit.MyHttpRoutesSuite:0s
 
 ### Testing `AuthedRoutes`
 
-If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use the `Http4sAuthedRoutesSuite`. It is completely similar to the previous suite, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to ensure we provide the context in the request by using our extension function `context`:
+If we want to test authenticated routes (`AuthedRoutes` in http4s) it will be completely similar to the previous section, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to ensure we provide the context in the request by using our extension function `context`:
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
 
 import org.http4s._
 
-class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
+class MyAuthedRoutesSuite extends munit.Http4sSuite {
 
-  override val routes: AuthedRoutes[String, IO] = AuthedRoutes.of {
+  override def http4sMUnitClientFixture = AuthedRoutes.of[String, IO] {
     case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
     case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
-  }
+  }.asFixture
 
   test(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
@@ -90,7 +93,7 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 
 ### Using a mocked http4s `Client`
 
-If you want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `Http4sMUnitSyntax` (it also requires extending `CatsEffectSuite`).
+If you just want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `Http4sMUnitSyntax` (it also requires extending `CatsEffectSuite`).
 
 It includes a handful of utilities among which are two extension methods to the `Client` companion object: `from` and `partialFixture`.
 
@@ -158,7 +161,9 @@ class PingServiceSuite extends munit.CatsEffectSuite with munit.Http4sMUnitSynta
 
 ### Testing a remote HTTP server
 
-In the case you don't want to use static http4s routes, but a running HTTP server, you can directly use `Http4sSuite` and provide an http4s' `Client` implementation under `http4sMUnitClient`. Every test request you had will be made using this client.
+In the case you don't want to use static http4s routes, but a running HTTP server,
+you just need to provide a real http4s' `Client` implementation under `http4sMUnitClient`.
+Every test request you write will be made using this client.
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
@@ -314,12 +319,12 @@ import cats.effect.IO
 
 import org.http4s._
 
-class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
+class MyHttpRoutesSuite extends munit.Http4sSuite {
 
-  override val routes: HttpRoutes[IO] = HttpRoutes.of {
+  override val http4sMUnitClientFixture = HttpRoutes.of[IO] {
     case GET -> Root / "hello"        => Ok("Hi")
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
-  }
+  }.asFixture
 
 }
 
@@ -396,7 +401,7 @@ test(GET(uri"hello")).doNotRepeat { response =>
 
 ### Nested requests
 
-Sometimes (mostly while using the `HttpServerSuite` or `HttpFromContainerSuite`) one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
+Sometimes one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
 
 ```scala mdoc:silent
 test(GET(uri"posts" +? ("number" -> 10)))
@@ -410,7 +415,7 @@ test(GET(uri"posts" +? ("number" -> 10)))
 
 ### Test names
 
-The generated test names can be customized by overriding `http4sMUnitTestNameCreator`. Allows altering the name of the generated tests.
+The generated test names can be customized by overriding `http4sMUnitTestNameCreator`. It allows altering the name of the generated tests.
 
 Default implementation generates test names like:
 
@@ -441,9 +446,10 @@ import cats.effect.IO
 
 import org.http4s._
 
-class MySuite extends munit.Http4sHttpRoutesSuite {
+class MySuite extends munit.Http4sSuite {
 
-  val routes: HttpRoutes[IO] = HttpRoutes.pure(Response().withEntity("""{"id": 1, "name": "Jose"}"""))
+  override def http4sMUnitClientFixture = 
+    HttpRoutes.of[IO](_ => Ok("""{"id": 1, "name": "Jose"}""")).asFixture
 
   test(GET(uri"users"))(response => assertEquals(response.status.code, 204))
 

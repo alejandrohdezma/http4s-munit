@@ -21,10 +21,11 @@ import cats.syntax.all._
 
 import org.http4s.HttpRoutes
 import org.http4s.Status
+import org.http4s.client.Client
 
-class RealWorldTest extends Http4sHttpRoutesSuite {
+class RealWorldTest extends Http4sSuite {
 
-  override val routes: HttpRoutes[IO] = HttpRoutes.fail
+  override def http4sMUnitClientFixture = Client.fail.asFixture
 
   trait Database {
 
