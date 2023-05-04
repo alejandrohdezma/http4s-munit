@@ -258,6 +258,53 @@ class TestContainersSuite extends munit.Http4sSuite {
 
 ## Other features
 
+### Running an effect before running your test
+
+Sometimes (specially when you are testing against a real server) you need something to be
+run before running your test. On these cases, you can just create a
+`ResourceFunFixture[Client[IO]]` (in which you can add other effects) and run it with `test`.
+
+Essentially this is the same as just running `test` since it is just an alias for
+`http4sMUnitClientFixture.test`.
+
+```scala mdoc:reset:silent
+import cats.effect.IO
+import cats.effect.Resource
+import cats.syntax.all._
+
+import io.circe.Json
+import io.circe.syntax._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.circe._
+
+class MyBookstoreSuite extends munit.Http4sSuite {
+
+  def httpClient = EmberClientBuilder.default[IO].build
+
+  override def http4sMUnitClientFixture = ResourceFunFixture(httpClient)
+
+  ResourceFunFixture {
+    httpClient.flatTap { client =>
+      Resource.make {
+        val newBook = Json.obj("name":= "The Lord Of The Rings")
+
+        client
+          .expect[Json](POST(newBook, uri"http://localhost:8080/books"))
+          .flatMap(_.hcursor.get[Int]("id").liftTo[IO])
+      } { id =>
+        client.run(DELETE(uri"http://localhost:8080/books" / id)).use_
+      }.as(client)
+    }
+  }.test(GET(uri"http://localhost:8080/books?q=Rings")) { response =>
+    assertEquals(response.status.code, 200, response.clues)
+
+    val result = response.as[Json].map(_.hcursor.get[String]("name"))
+
+    assertIO(result, Right("The Lord Of The Rings"), response.clues)
+  }
+}
+```
+
 ### Tagging your tests
 
 Once the request has been passed to the `test` method, we can tag our tests before implementing them:
