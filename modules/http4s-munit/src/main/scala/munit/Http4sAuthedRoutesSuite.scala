@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,12 +72,13 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
 
     /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = creator.copy(
-      http4sMUnitFunFixture = ResourceFunFixture(
-        ((request: Request[IO]) => newRoutes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
-          .pure[Resource[IO, *]]
-      )
-    )
+    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = {
+      val client = Client[IO] { request =>
+        newRoutes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource
+      }
+
+      creator.copy(executor = options => body => test(options)(body(client)))
+    }
 
   }
 
@@ -99,10 +100,10 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture(
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
     Client[IO](request => routes.orNotFound.run(AuthedRequest(request.getContext, request)).toResource)
       .pure[Resource[IO, *]]
-  )
+  }
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *

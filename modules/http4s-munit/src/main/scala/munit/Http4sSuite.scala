@@ -188,7 +188,9 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
 
   case class Http4sMUnitTestCreator(
       request: Request[IO],
-      http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]],
+      executor: TestOptions => (Client[IO] => IO[Unit]) => Unit,
+      nameCreator: Http4sMUnitTestNameCreator = Http4sMUnitTestNameCreator.default(),
+      bodyPrettifier: String => String = identity,
       followingRequests: List[(String, Response[IO] => IO[Request[IO]])] = Nil,
       testOptions: TestOptions = TestOptions(""),
       config: Http4sMUnitConfig = Http4sMUnitConfig.default
@@ -245,72 +247,71 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
       */
     def andThen(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator = andThen("")(f)
 
-    def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
-      http4sMUnitFunFixture.test {
-        val options = testOptions.withLocation(loc)
-        options.withName(http4sMUnitTestNameCreator.nameFor(request, followingRequests.map(_._1), options, config))
-      } { client =>
-        val numRepetitions     = config.repetitions.getOrElse(1)
-        val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
-        Stream
-          .range[IO, Int](1, numRepetitions + 1)
-          .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
-            followingRequests
-              .foldLeft(client(request)) { (previousRequest, nextRequest) =>
-                for {
-                  previousResponse <- previousRequest
-                  request          <- nextRequest._2(previousResponse).to[Resource[IO, *]]
-                  response         <- client(request)
-                } yield response
-              }
-              .use { response =>
-                IO(body(response)).attempt.flatMap {
-                  case Right(io: IO[Any]) => io
-                  case Right(a)           => IO.pure(a)
-                  case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
-                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                      t.getMessage().split("Clues \\{") match {
-                        case Array(p1, p2) =>
-                          val bodyClue =
-                            "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
-                              body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
-                          IO.raiseError(t.withMessage(p1 + bodyClue + p2))
-                        case _ => IO.raiseError(t)
-                      }
+    def apply(body: Response[IO] => Any)(implicit loc: Location): Unit = executor {
+      val options = testOptions.withLocation(loc)
+      options.withName(nameCreator.nameFor(request, followingRequests.map(_._1), options, config))
+    } { (client: Client[IO]) =>
+      val numRepetitions     = config.repetitions.getOrElse(1)
+      val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
+      Stream
+        .range[IO, Int](1, numRepetitions + 1)
+        .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
+          followingRequests
+            .foldLeft(client.run(request)) { (previousRequest, nextRequest) =>
+              for {
+                previousResponse <- previousRequest
+                request          <- nextRequest._2(previousResponse).toResource
+                response         <- client.run(request)
+              } yield response
+            }
+            .use { response =>
+              IO(body(response)).attempt.flatMap {
+                case Right(io: IO[Any]) => io
+                case Right(a)           => IO.pure(a)
+                case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
+                  response.bodyText.compile.string.map(bodyPrettifier(_)) >>= { body =>
+                    t.getMessage().split("Clues \\{") match {
+                      case Array(p1, p2) =>
+                        val bodyClue =
+                          "Clues {\n  response.bodyText.compile.string: String = \"\"\"\n" +
+                            body.split("\n").map("    " + _).mkString("\n") + "\n  \"\"\","
+                        IO.raiseError(t.withMessage(p1 + bodyClue + p2))
+                      case _ => IO.raiseError(t)
                     }
-                  case Left(t: FailExceptionLike[_]) =>
-                    response.bodyText.compile.string.map(http4sMUnitBodyPrettifier(_)) >>= { body =>
-                      IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
-                    }
-                  case Left(t) => IO.raiseError(t)
-                }
+                  }
+                case Left(t: FailExceptionLike[_]) =>
+                  response.bodyText.compile.string.map(bodyPrettifier(_)) >>= { body =>
+                    IO.raiseError(t.withMessage(s"${t.getMessage()}\n\nResponse body was:\n\n$body\n"))
+                  }
+                case Left(t) => IO.raiseError(t)
               }
-              .attempt
-          }
-          .mapFilter(_.swap.toOption)
-          .compile
-          .toList
-          .flatMap {
-            case Nil                                      => IO.unit
-            case List(throwables) if numRepetitions === 1 => IO.raiseError(throwables)
-            case throwables if showAllStackTraces =>
-              IO.raiseError(
-                new FailException(
-                  s"${throwables.size} / $numRepetitions  tests failed while execution this parallel test\n${throwables
-                      .map(_.getMessage())
-                      .mkString("/n/n")}",
-                  loc
-                )
+            }
+            .attempt
+        }
+        .mapFilter(_.swap.toOption)
+        .compile
+        .toList
+        .flatMap {
+          case Nil                                      => IO.unit
+          case List(throwables) if numRepetitions === 1 => IO.raiseError(throwables)
+          case throwables if showAllStackTraces =>
+            IO.raiseError(
+              new FailException(
+                s"${throwables.size} / $numRepetitions  tests failed while execution this parallel test\n${throwables
+                    .map(_.getMessage())
+                    .mkString("/n/n")}",
+                loc
               )
-            case throwables =>
-              IO.raiseError(
-                new FailException(
-                  s"${throwables.size} / $numRepetitions tests failed while execution this parallel test",
-                  loc
-                )
+            )
+          case throwables =>
+            IO.raiseError(
+              new FailException(
+                s"${throwables.size} / $numRepetitions tests failed while execution this parallel test",
+                loc
               )
-          }
-      }
+            )
+        }
+    }
 
   }
 
@@ -338,6 +339,11 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     *   }}}
     */
   def test(request: Request[IO]): Http4sMUnitTestCreator =
-    Http4sMUnitTestCreator(request, http4sMUnitFunFixture: @nowarn)
+    Http4sMUnitTestCreator(
+      request = request,
+      executor = options => f => (http4sMUnitFunFixture: @nowarn).test(options)(client => f(Client[IO](client))),
+      nameCreator = http4sMUnitTestNameCreator,
+      bodyPrettifier = http4sMUnitBodyPrettifier
+    )
 
 }
