@@ -185,6 +185,42 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
           else json
       )
 
+  implicit final class ClientFunFixtureTestOps(fixture: SyncIO[FunFixture[Client[IO]]])
+      extends SyncIOFunFixtureOps(fixture) {
+
+    /** Declares a test for the provided request.
+      *
+      * @example
+      *   {{{
+      * test(GET(uri"users" / 42)) { response =>
+      *     // test body
+      * }
+      *   }}}
+      *
+      * @example
+      *   {{{
+      * test(POST(json, uri"users")).alias("Create a new user") { response =>
+      *     // test body
+      * }
+      *   }}}
+      *
+      * @example
+      *   {{{
+      * test(GET(uri"users" / 42)).flaky { response =>
+      *     // test body
+      * }
+      *   }}}
+      */
+    def test(request: Request[IO]): Http4sMUnitTestCreator =
+      Http4sMUnitTestCreator(
+        request = request,
+        executor = fixture.test,
+        nameCreator = http4sMUnitTestNameCreator,
+        bodyPrettifier = http4sMUnitBodyPrettifier
+      )
+
+  }
+
   /** Declares a test for the provided request.
     *
     * @example

@@ -36,4 +36,12 @@ class HttpSuiteSuite extends Http4sSuite {
     assertIO(result, Right("gutiory"), response.clues)
   }
 
+  http4sMUnitClientFixture.test(GET(uri"users/alejandrohdezma")) { response =>
+    assertEquals(response.status.code, 200, response.clues)
+
+    val result = response.as[Json].map(_.hcursor.get[String]("login"))
+
+    assertIO(result, Right("alejandrohdezma"), response.clues)
+  }
+
 }
