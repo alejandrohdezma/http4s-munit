@@ -38,7 +38,7 @@ import org.typelevel.ci.CIString
 
 trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax { self: CatsEffectSuite =>
 
-  implicit class ClientTypeOps(t: Client.type) {
+  implicit class Http4sMUnitClientTypeOps(t: Client.type) {
 
     /** A `Client` instance that always fails */
     def fail: Client[IO] = Client[IO](request => Assertions.fail("This should not be called", clues(request)))
@@ -76,7 +76,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit final class CiStringHeaderOps(ci: CIString) {
+  implicit final class Http4sMunitCIStringOps(ci: CIString) {
 
     /** Creates a `Header.Raw` value from a case-insensitive string. */
     def :=(value: String): Header.Raw = Header.Raw(ci, value)
@@ -86,7 +86,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
   /** Alias for `http://localhost` */
   def localhost = uri"http://localhost"
 
-  implicit class RequestContextOps(request: Request[IO]) {
+  implicit class Http4sMUnitRequestOps(request: Request[IO]) {
 
     /** Adds a request context as an attribute using [[RequestContext.key]]. */
     def context[A: Show](context: A): Request[IO] = request.withAttribute(RequestContext.key, RequestContext(context))
@@ -102,14 +102,14 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit final class HttpRoutesToFixture(httpRoutes: HttpRoutes[IO]) {
+  implicit final class Http4sMUnitHttpRoutesOps(httpRoutes: HttpRoutes[IO]) {
 
     /** Transforms the provided routes into an http4s' `Client` fixture. */
     def asFixture: SyncIO[FunFixture[Client[IO]]] = httpRoutes.orNotFound.asFixture
 
   }
 
-  implicit final class AuthedRoutesToFixture[A](authedRoutes: AuthedRoutes[A, IO]) {
+  implicit final class Http4sMUnitAuthedRoutesOps[A](authedRoutes: AuthedRoutes[A, IO]) {
 
     /** Transforms the provided routes into an http4s' `Client` fixture.
       *
@@ -120,7 +120,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit final class HttpAppToFixture[A](httpApp: HttpApp[IO]) {
+  implicit final class Http4sMUnitHttpAppOps[A](httpApp: HttpApp[IO]) {
 
     /** Transforms the provided app into an http4s' `Client` fixture. */
     def asFixture: SyncIO[FunFixture[Client[IO]]] =
@@ -128,7 +128,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit class ClientWithBaseUriOps(client: Client[IO]) {
+  implicit class Http4sMUnitClientOps(client: Client[IO]) {
 
     /** Prepends the provided `Uri` to every request made by this client. */
     def withBaseUri(uri: Uri): Client[IO] = client.withUpdatedUri(uri.resolve)
@@ -141,7 +141,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit class UriWithPort(uri: Uri) {
+  implicit class Http4sMUnitUriOps(uri: Uri) {
 
     /** Allows changing the URIs port */
     def withPort(port: Int): Uri = {
