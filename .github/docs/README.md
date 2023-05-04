@@ -158,25 +158,21 @@ class PingServiceSuite extends munit.ClientSuite {
 
 ### Testing a remote HTTP server
 
-In the case you don't want to use static http4s routes, but a running HTTP server, you have available the `HttpSuite`. This suite behaves exactly the same as the previous ones except that you don't provide a `routes` object, but a `baseUri` with the URI of your HTTP server. Any `Request` added in tests will prepend
-this URI before making a call using a real http4s `Client`. By default the library uses Ember as the client implementation (although you'll need to provide its dependency explicitly). If you want to use a different implementation just override `http4sMUnitClient`.
+In the case you don't want to use static http4s routes, but a running HTTP server, you can directly use `Http4sSuite` and provide an http4s' `Client` implementation under `http4sMUnitClient`. Every test request you had will be made using this client.
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
-import cats.effect.Resource
+import cats.effect.SyncIO
 
 import io.circe.Json
-
-import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.ember.client.EmberClientBuilder
 
-class GitHubSuite extends munit.HttpSuite {
+class GitHubSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].resource
-
-  override val baseUri: Uri = uri"https://api.github.com"
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+    ResourceFunFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(uri"https://api.github.com")))
 
   test(GET(uri"users/gutiory")) { response =>
     assertEquals(response.status.code, 200)
@@ -189,25 +185,31 @@ class GitHubSuite extends munit.HttpSuite {
 }
 ```
 
+> If you are making requests to the same server, you can override `http4sMUnitClientFixture` like:
+>
+> ```scala
+> override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+>   ResourceFunFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(8080))))
+> ```
+
 ### Testing an HTTP server running inside a container
 
 Testing a Docker container with TestContainers and `http4s-munit` is easy. You
-just need to use `TestCotnainersFixtures` and use an `HttpSuite` to connect to
+just need to use `TestCotnainersFixtures` and use `Http4sSuite` to connect to
 it:
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
+import cats.effect.SyncIO
 
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.fixtures.TestContainersFixtures
 import io.circe.Json
-import org.http4s._
+import org.http4s.client.Client
 import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 
-class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
-
-  override def http4sMUnitClient = EmberClientBuilder.default[IO].build
+class TestContainersSuite extends munit.Http4sSuite with TestContainersFixtures {
 
   // There is also available `ForEachContainerFixture`
   val container = ForAllContainerFixture {
@@ -216,7 +218,9 @@ class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
 
   override def munitFixtures = List(container)
 
-  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container().mappedPort(80)}")
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
+    EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container().mappedPort(80))))
+  }
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
@@ -234,22 +238,19 @@ import cats.effect.Resource
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.GenericContainer
-import io.circe.Json
-import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 
-class TestContainersSuite extends munit.HttpSuite {
+class TestContainersSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient =
-    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+  lazy val container = GenericContainer(dockerImage = "nginxdemos/hello", exposedPorts = List(80))
 
-  lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
-
-  override def baseUri() = localhost.withPort(container.mappedPort(80))
+  override def http4sMUnitClientFixture = ResourceFunFixture {
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
+      EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
+  }
 
   test(GET(uri"ping")) { response =>
-    assertEquals(response.status.code, 200)
-    assertIOBoolean(response.as[Json].map(_.isObject))
+    assertEquals(response.status.code, 200, response.clues)
   }
 
 }
@@ -348,7 +349,7 @@ test(GET(uri"hello")).doNotRepeat { response =>
 
 ### Nested requests
 
-Sometimes (mostly while using the `HttpSuite` or `HttpFromContainerSuite`) one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
+Sometimes (mostly while using the `HttpServerSuite` or `HttpFromContainerSuite`) one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
 
 ```scala mdoc:silent
 test(GET(uri"posts" +? ("number" -> 10)))
@@ -444,10 +445,12 @@ import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci._
 
-class TestContainersSuite extends munit.HttpSuite {
+class TestContainersSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient =
-    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+  override def http4sMUnitClientFixture = ResourceFunFixture {
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
+      EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
+  }
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
     val logs = response.headers
@@ -460,8 +463,6 @@ class TestContainersSuite extends munit.HttpSuite {
   }
 
   lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
-
-  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container.mappedPort(80)}")
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200, response.clues)

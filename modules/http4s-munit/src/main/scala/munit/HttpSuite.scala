@@ -68,7 +68,8 @@ import org.http4s.ember.client.EmberClientBuilder
   * @author
   *   José Gutiérrez
   */
-trait HttpSuite extends Http4sSuite with CatsEffectFunFixtures {
+@deprecated("Use munit.Http4sSuite with a provided http4s` Client instead", since = "0.16.0")
+trait HttpSuite extends Http4sSuite {
 
   /** The base URI for all tests. This URI will prepend the one used in each test's request. */
   def baseUri(): Uri = Uri()
