@@ -80,7 +80,7 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 
   // You can also override routes per-test
   test(GET(uri"hello" / "Jose").context("alex"))
-    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
+    .withAuthedRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
     .alias("Overriden routes") { response =>
       assertIO(response.as[String], "Hey")
     }

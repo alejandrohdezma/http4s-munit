@@ -63,14 +63,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
   }
 
-  implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
-
-    /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator =
-      creator.copy(executor = newRoutes.asFixture.test)
-
-  }
-
   implicit class AuthedRoutesCompanionOps(companion: AuthedRoutes.type) {
 
     /** An AuthedRoutes instance that always fails */

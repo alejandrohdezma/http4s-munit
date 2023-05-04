@@ -62,14 +62,6 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
     */
   val routes: HttpRoutes[IO]
 
-  implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
-
-    /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator =
-      creator.copy(executor = newRoutes.asFixture.test)
-
-  }
-
   implicit class HttpRoutesCompanionOps(companion: HttpRoutes.type) {
 
     /** An HttpRoutes instance that always fails */
