@@ -4,7 +4,7 @@ ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.11", Scala3)
 
 ThisBuild / organization := "com.alejandrohdezma"
 
-addCommandAlias("ci-test", "scalafmtCheckAll; mdoc; +test")
+addCommandAlias("ci-test", "fix --check; mdoc; +test")
 addCommandAlias("ci-docs", "github; headerCreateAll; mdoc")
 addCommandAlias("ci-publish", "github; ci-release")
 
