@@ -61,11 +61,8 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   implicit class Request2AuthedRequest(request: Request[IO]) {
 
     /** Alias for adding a request's context. */
-    def context(context: A): Request[IO] = request.withAttribute(RequestContext.key, RequestContext(context))
-
-    /** Alias for adding a request's context. */
     @deprecated("Use `.context` instead", since = "0.16.0")
-    def ->(a: A): Request[IO] = context(a)
+    def ->(a: A): Request[IO] = request.context(a)
 
   }
 
@@ -79,15 +76,6 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
       creator.copy(executor = options => body => test(options)(body(client)))
     }
-
-  }
-
-  implicit class RequestContextOps(request: Request[IO]) {
-
-    def getContext: A = request.attributes
-      .lookup(RequestContext.key)
-      .getOrElse(fail("Auth context not found on request, remember to add one with `.context`", clues(request)))
-      .as[A]
 
   }
 

@@ -16,9 +16,10 @@
 
 package munit
 
+import cats.Show
 import cats.effect.IO
+import cats.effect.Resource
 import cats.effect.SyncIO
-import cats.effect.kernel.Resource
 
 import org.http4s.Header
 import org.http4s.HttpApp
@@ -77,6 +78,22 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   /** Alias for `http://localhost` */
   def localhost = uri"http://localhost"
+
+  implicit class RequestContextOps(request: Request[IO]) {
+
+    /** Adds a request context as an attribute using [[RequestContext.key]]. */
+    def context[A: Show](context: A): Request[IO] = request.withAttribute(RequestContext.key, RequestContext(context))
+
+    /** Retrieves the context stored as an attribute using [[RequestContext.key]].
+      *
+      * You can use `Request#context` to set the context attribute.
+      */
+    def getContext[A]: A = request.attributes
+      .lookup(RequestContext.key)
+      .getOrElse(fail("Auth context not found on request, remember to add one with `.context`", clues(request)))
+      .as[A]
+
+  }
 
   implicit class ClientWithBaseUriOps(client: Client[IO]) {
 
