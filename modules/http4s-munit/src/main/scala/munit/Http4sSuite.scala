@@ -165,6 +165,18 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
 
   }
 
+  def localhost = uri"http://localhost"
+
+  implicit class UriWithPort(uri: Uri) {
+
+    /** Allows changing the URIs port */
+    def withPort(port: Int): Uri = {
+      val authority = uri.authority.fold(Uri.Authority(port = Some(port)))(_.copy(port = Some(port)))
+      uri.copy(authority = Some(authority))
+    }
+
+  }
+
   case class Http4sMUnitTestCreator(
       request: Request[IO],
       http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]],

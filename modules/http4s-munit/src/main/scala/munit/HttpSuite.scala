@@ -84,18 +84,6 @@ trait HttpSuite extends Http4sSuite with CatsEffectFunFixtures {
       ) // scalafix:ok
   }
 
-  val localhost = uri"http://localhost" // scalafix:ok
-
-  implicit class UriWithPort(uri: Uri) {
-
-    /** Allows changing the URIs port */
-    def withPort(port: Int): Uri = {
-      val authority = uri.authority.fold(Uri.Authority(port = Some(port)))(_.copy(port = Some(port)))
-      uri.copy(authority = Some(authority))
-    }
-
-  }
-
   /** @inheritdoc */
   @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
   override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
