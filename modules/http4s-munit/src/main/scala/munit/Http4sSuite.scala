@@ -75,6 +75,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     * @return
     *   the test's name
     */
+  @deprecated(message = "Use `http4sMUnitTestNameCreator` instead", since = "0.16.0")
   def http4sMUnitNameCreator(
       request: Request[IO],
       followingRequests: List[String],
@@ -89,7 +90,39 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
   )
 
   /** List of replacements that will be applied to the result of `http4sMUnitNameCreator` using `String#replaceAll` */
+  @deprecated(
+    message = "Override `http4sMUnitTestNameCreator` instead and provide replacements to `default` constructor",
+    since = "0.16.0"
+  )
   def http4sMUnitNameCreatorReplacements(): Seq[(String, String)] = Nil
+
+  /** Allows altering the name of the generated tests.
+    *
+    * By default it will generate test names like:
+    *
+    * {{{
+    * // GET -> users/42
+    * test(GET(uri"users" / 42))
+    *
+    * // GET -> users (All users)
+    * test(GET(uri"users")).alias("All users")
+    *
+    * // GET -> users as user-1
+    * test(GET(uri"users").as("user-1"))
+    *
+    * // GET -> users - executed 10 times with 2 in parallel
+    * test(GET(uri"users")).repeat(10).parallel(2)
+    *
+    * // GET -> users (retrieve the list of users and get the first user from the list)
+    * test(GET(uri"users"))
+    *     .alias("retrieve the list of users")
+    *     .andThen("get the first user from the list")(_.as[List[User]].flatMap {
+    *       case Nil               => fail("The list of users should not be empty")
+    *       case (head: User) :: _ => GET(uri"users" / head.id.show)
+    *     })
+    * }}}
+    */
+  def http4sMUnitTestNameCreator: Http4sMUnitTestNameCreator = http4sMUnitNameCreator(_, _, _, _): @nowarn
 
   /** Returns the response as suite clues.
     *
@@ -213,11 +246,10 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     def andThen(f: Response[IO] => IO[Request[IO]]): Http4sMUnitTestCreator = andThen("")(f)
 
     def apply(body: Response[IO] => Any)(implicit loc: Location): Unit =
-      http4sMUnitFunFixture.test(
-        testOptions
-          .withName(http4sMUnitNameCreator(request, followingRequests.map(_._1), testOptions.withLocation(loc), config))
-          .withLocation(loc)
-      ) { client =>
+      http4sMUnitFunFixture.test {
+        val options = testOptions.withLocation(loc)
+        options.withName(http4sMUnitTestNameCreator.nameFor(request, followingRequests.map(_._1), options, config))
+      } { client =>
         val numRepetitions     = config.repetitions.getOrElse(1)
         val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
         Stream

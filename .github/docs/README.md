@@ -363,9 +363,9 @@ test(GET(uri"posts" +? ("number" -> 10)))
 
 ### Test names
 
-The generated test names can be customized by overriding `http4sMUnitNameCreator`. Allows altering the name of the generated tests.
+The generated test names can be customized by overriding `http4sMUnitTestNameCreator`. Allows altering the name of the generated tests.
 
-By default this method generate test names like:
+Default implementation generates test names like:
 
 ```scala mdoc:silent
 // GET -> users/42
