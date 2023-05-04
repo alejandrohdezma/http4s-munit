@@ -16,6 +16,8 @@
 
 package munit
 
+import scala.annotation.nowarn
+
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
@@ -281,5 +283,31 @@ trait Http4sSuite extends CatsEffectSuite with Http4sDsl[IO] with Http4sClientDs
       }
 
   }
+
+  /** Declares a test for the provided request.
+    *
+    * @example
+    *   {{{
+    * test(GET(uri"users" / 42)) { response =>
+    *     // test body
+    * }
+    *   }}}
+    *
+    * @example
+    *   {{{
+    * test(POST(json, uri"users")).alias("Create a new user") { response =>
+    *     // test body
+    * }
+    *   }}}
+    *
+    * @example
+    *   {{{
+    * test(GET(uri"users" / 42)).flaky { response =>
+    *     // test body
+    * }
+    *   }}}
+    */
+  def test(request: Request[IO]): Http4sMUnitTestCreator =
+    Http4sMUnitTestCreator(request, http4sMUnitFunFixture: @nowarn)
 
 }

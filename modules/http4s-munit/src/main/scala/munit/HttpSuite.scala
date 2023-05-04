@@ -107,30 +107,4 @@ trait HttpSuite extends Http4sSuite with CatsEffectFunFixtures {
       }
     }
 
-  /** Declares a test for the provided request. That request will be executed using the provided client in `httpClient`
-    * (and prepending the `baseUri` URI if it is not empty).
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)) { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(POST(json, uri"users")).alias("Create a new user") { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)).flaky { response =>
-    *     // test body
-    * }
-    *   }}}
-    */
-  def test(request: Request[IO]) = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
-
 }

@@ -128,11 +128,11 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
     * }
     *   }}}
     */
-  def test(request: Request[IO]): Http4sMUnitTestCreator = {
+  override def test(request: Request[IO]): Http4sMUnitTestCreator = {
     if (!request.attributes.contains(RequestContext.key))
       fail("Auth context not found on request, remember to add one with `.context`", clues(request))
 
-    Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+    super.test(request)
   }
 
 }

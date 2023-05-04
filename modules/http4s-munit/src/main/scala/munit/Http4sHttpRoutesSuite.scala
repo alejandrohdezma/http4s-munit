@@ -85,29 +85,4 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
   override def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
     SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
 
-  /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)) { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(POST(json, uri"users")).alias("Create a new user") { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)).flaky { response =>
-    *     // test body
-    * }
-    *   }}}
-    */
-  def test(request: Request[IO]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
-
 }
