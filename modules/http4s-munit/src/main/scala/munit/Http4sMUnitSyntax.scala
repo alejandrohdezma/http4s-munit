@@ -40,6 +40,9 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   implicit class ClientTypeOps(t: Client.type) {
 
+    /** A `Client` instance that always fails */
+    def fail: Client[IO] = Client[IO](request => Assertions.fail("This should not be called", clues(request)))
+
     /** Creates an http4s `Client` from a partial function representing routes (like those created with
       * `HttpRoutes.of`).
       *
@@ -51,7 +54,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
       *   }}}
       */
     def from(pf: PartialFunction[Request[IO], IO[Response[IO]]]): Client[IO] =
-      Client.fromHttpApp(HttpApp[IO](r => pf.lift(r).getOrElse(fail("This should not be called", clues(r)))))
+      Client.fromHttpApp(HttpApp[IO](r => pf.lift(r).getOrElse(Assertions.fail("This should not be called", clues(r)))))
 
     /** Creates an MUnit fixture that initializes some class that depends on an http4s `Client` for each test.
       *
