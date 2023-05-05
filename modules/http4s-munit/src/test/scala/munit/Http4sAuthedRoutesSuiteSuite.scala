@@ -19,8 +19,11 @@ package munit
 import cats.effect.IO
 
 import org.http4s.AuthedRoutes
+import org.typelevel.vault.Key
 
 class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
+
+  implicit val key = Key.newKey[IO, String].unsafeRunSync()
 
   override def http4sMUnitClientFixture = AuthedRoutes
     .of[String, IO] {

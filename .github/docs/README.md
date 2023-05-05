@@ -63,14 +63,23 @@ munit.MyHttpRoutesSuite:0s
 
 ### Testing `AuthedRoutes`
 
-If we want to test authenticated routes (`AuthedRoutes` in http4s) it will be completely similar to the previous section, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to ensure we provide the context in the request by using our extension function `context`:
+If we want to test authenticated routes (`AuthedRoutes` in http4s) it will be
+completely similar to the previous section, except that we need to ensure we
+provide the context in the request. The library provides a couple methods to
+simplify this: `context` and `getContext`.
+
+For both of them you need to have an implicit `Key[A]` instance (being `A`
+your context's type) in scope.
 
 ```scala mdoc:reset:silent
 import cats.effect.IO
 
 import org.http4s._
+import org.typelevel.vault.Key
 
 class MyAuthedRoutesSuite extends munit.Http4sSuite {
+
+  implicit val key = Key.newKey[IO, String].unsafeRunSync()
 
   override def http4sMUnitClientFixture = AuthedRoutes.of[String, IO] {
     case GET -> Root / "hello" as user        => Ok(s"$user: Hi")

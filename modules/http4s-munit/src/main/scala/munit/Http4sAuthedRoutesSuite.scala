@@ -23,6 +23,7 @@ import cats.effect.SyncIO
 import org.http4s.AuthedRoutes
 import org.http4s.Request
 import org.http4s.client.Client
+import org.typelevel.vault.Key
 
 /** Base class for suites testing `AuthedRoutes`.
   *
@@ -52,6 +53,9 @@ import org.http4s.client.Client
   */
 @deprecated("Use `Http4sSuite` overriding `http4sMUnitClientFixture` instead", since = "0.16.0")
 abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
+
+  @SuppressWarnings(Array("scalafix:DisableSyntax.valInAbstract"))
+  implicit val key: Key[A] = Key.newKey[IO, A].unsafeRunSync()
 
   /** The HTTP routes being tested */
   val routes: AuthedRoutes[A, IO]
@@ -99,7 +103,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
     *   }}}
     */
   override def test(request: Request[IO]): Http4sMUnitTestCreator = {
-    if (!request.attributes.contains(RequestContext.key))
+    if (!request.attributes.contains(key))
       fail("Auth context not found on request, remember to add one with `.context`", clues(request))
 
     super.test(request)

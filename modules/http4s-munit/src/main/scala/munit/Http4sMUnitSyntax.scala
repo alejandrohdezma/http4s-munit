@@ -16,7 +16,6 @@
 
 package munit
 
-import cats.Show
 import cats.data.Kleisli
 import cats.data.OptionT
 import cats.effect.IO
@@ -37,6 +36,7 @@ import org.http4s.client.dsl.Http4sClientDsl
 import org.http4s.dsl.Http4sDsl
 import org.http4s.syntax.AllSyntax
 import org.typelevel.ci.CIString
+import org.typelevel.vault.Key
 
 trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax { self: CatsEffectSuite =>
 
@@ -90,17 +90,17 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   implicit class Http4sMUnitRequestOps(request: Request[IO]) {
 
-    /** Adds a request context as an attribute using [[RequestContext.key]]. */
-    def context[A: Show](context: A): Request[IO] = request.withAttribute(RequestContext.key, RequestContext(context))
+    /** Adds a request context as an attribute using an implicit key. */
+    def context[A](context: A)(implicit key: Key[A]): Request[IO] =
+      request.withAttribute(key, context)
 
-    /** Retrieves the context stored as an attribute using [[RequestContext.key]].
+    /** Retrieves the context stored as an attribute using an implicit key..
       *
       * You can use `Request#context` to set the context attribute.
       */
-    def getContext[A]: A = request.attributes
-      .lookup(RequestContext.key)
+    def getContext[A](implicit key: Key[A]): A = request.attributes
+      .lookup(key)
       .getOrElse(fail("Auth context not found on request, remember to add one with `.context`", clues(request)))
-      .as[A]
 
   }
 
@@ -111,7 +111,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit final class Http4sMUnitAuthedRoutesOps[A](authedRoutes: AuthedRoutes[A, IO]) {
+  implicit final class Http4sMUnitAuthedRoutesOps[A: Key](authedRoutes: AuthedRoutes[A, IO]) {
 
     /** Transforms the provided routes into an http4s' `Client` fixture.
       *
