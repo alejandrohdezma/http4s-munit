@@ -79,14 +79,14 @@ import org.typelevel.vault.Key
 
 class MyAuthedRoutesSuite extends munit.Http4sSuite {
 
-  implicit val key = Key.newKey[IO, String].unsafeRunSync()
+  implicit val key: Key[String] = Key.newKey[IO, String].unsafeRunSync()
 
-  override def http4sMUnitClientFixture = AuthedRoutes.of[String, IO] {
-    case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
-    case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
-  }.orFail
-    .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
-    .asFixture
+  override def http4sMUnitClientFixture = AuthedRequest.fromContext[String].andThen {
+    AuthedRoutes.of[String, IO] {
+      case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
+      case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
+    }
+  }.orFail.asFixture
 
   test(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
@@ -95,9 +95,9 @@ class MyAuthedRoutesSuite extends munit.Http4sSuite {
   // You can also override routes per-test
   test(GET(uri"hello" / "Jose").context("alex"))
     .withHttpApp {
-      AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") }
+      AuthedRequest.fromContext[String]
+        .andThen(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
         .orFail
-        .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
     }
     .alias("Overriden routes") { response =>
       assertIO(response.as[String], "Hey")

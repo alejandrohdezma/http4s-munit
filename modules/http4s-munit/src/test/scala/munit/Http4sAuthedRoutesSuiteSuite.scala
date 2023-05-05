@@ -20,21 +20,18 @@ import cats.effect.IO
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
-import org.http4s.Request
 import org.typelevel.vault.Key
 
 class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
 
-  implicit val key = Key.newKey[IO, String].unsafeRunSync()
+  implicit val key: Key[String] = Key.newKey[IO, String].unsafeRunSync()
 
-  override def http4sMUnitClientFixture = AuthedRoutes
-    .of[String, IO] {
+  override def http4sMUnitClientFixture = AuthedRequest.fromContext.andThen {
+    AuthedRoutes.of[String, IO] {
       case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
       case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
     }
-    .orFail
-    .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
-    .asFixture
+  }.orFail.asFixture
 
   test(GET(uri"/hello").context("jose")).alias("Test 1") { response =>
     assertIO(response.as[String], "jose: Hi")
@@ -45,19 +42,19 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
   }
 
   test(GET(uri"/hello").context("jose")).withHttpApp {
-    AuthedRoutes
-      .of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") }
+    AuthedRequest
+      .fromContext[String]
+      .andThen(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") })
       .orFail
-      .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
   }.alias("Test 1 (overriding routes)") { response =>
     assertIO(response.as[String], "jose: Hey")
   }
 
   test(GET(uri"/hello" / "Jose").context("alex")).withHttpApp {
-    AuthedRoutes
-      .of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hey $name") }
+    AuthedRequest
+      .fromContext[String]
+      .andThen(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hey $name") })
       .orFail
-      .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
   }.alias("Test 2 (overriding routes)") { response =>
     assertIO(response.as[String], "alex: Hey Jose")
   }

@@ -16,7 +16,6 @@
 
 package munit
 
-import cats.Show
 import cats.effect.IO
 import cats.effect.SyncIO
 
@@ -53,7 +52,7 @@ import org.typelevel.vault.Key
   *   }}}
   */
 @deprecated("Use `Http4sSuite` overriding `http4sMUnitClientFixture` instead", since = "0.16.0")
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
+abstract class Http4sAuthedRoutesSuite[A] extends Http4sSuite {
 
   @SuppressWarnings(Array("scalafix:DisableSyntax.valInAbstract"))
   implicit val key: Key[A] = Key.newKey[IO, A].unsafeRunSync()
@@ -79,7 +78,7 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
 
   /** @inheritdoc */
   override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
-    routes.orFail.local((r: Request[IO]) => AuthedRequest(r.getContext[A], r)).asFixture
+    AuthedRequest.fromContext[A].andThen(routes).orFail.asFixture
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *

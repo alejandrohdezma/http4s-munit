@@ -16,6 +16,8 @@
 
 package munit
 
+import scala.util.control.NoStackTrace
+
 import cats.data.Kleisli
 import cats.data.OptionT
 import cats.effect.IO
@@ -23,6 +25,7 @@ import cats.effect.Resource
 import cats.effect.SyncIO
 import cats.syntax.all._
 
+import org.http4s.AuthedRequest
 import org.http4s.Header
 import org.http4s.HttpApp
 import org.http4s.Request
@@ -85,19 +88,37 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
   /** Alias for `http://localhost` */
   def localhost = uri"http://localhost"
 
+  implicit class Http4sMUnitAuthedRequestTypeOps(t: AuthedRequest.type) {
+
+    /** Provides a Kleisli for obtaining an `AuthedRequest` that can be combined with an `AuthedRoutes` instance easily.
+      *
+      * @example
+      *   {{{
+      *   val myAuthedRoutes: AuthedRoutes[IO, A] = ???
+      *
+      *   AuthedRequest.fromContext[A].andThen(myAuthedRoutes).orFail.asFixture
+      *   }}}
+      */
+    def fromContext[A: Key]: Kleisli[OptionT[IO, *], Request[IO], AuthedRequest[IO, A]] =
+      AuthedRequest((_: Request[IO]).getContext[A])
+        .mapK(OptionT.liftK)
+
+  }
+
+  case class ContextNotFound(request: Request[IO])
+      extends RuntimeException(s"Auth context not found on request $request, remember to add one with `.context()`")
+      with NoStackTrace
+
   implicit class Http4sMUnitRequestOps(request: Request[IO]) {
 
     /** Adds a request context as an attribute using an implicit key. */
-    def context[A](context: A)(implicit key: Key[A]): Request[IO] =
-      request.withAttribute(key, context)
+    def context[A](context: A)(implicit key: Key[A]): Request[IO] = request.withAttribute(key, context)
 
     /** Retrieves the context stored as an attribute using an implicit key..
       *
       * You can use `Request#context` to set the context attribute.
       */
-    def getContext[A](implicit key: Key[A]): A = request.attributes
-      .lookup(key)
-      .getOrElse(fail("Auth context not found on request, remember to add one with `.context`", clues(request)))
+    def getContext[A](implicit key: Key[A]): IO[A] = request.attributes.lookup(key).liftTo[IO](ContextNotFound(request))
 
   }
 
