@@ -17,6 +17,8 @@
 package munit
 
 import cats.Show
+import cats.data.Kleisli
+import cats.data.OptionT
 import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
@@ -117,6 +119,13 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
       */
     def asFixture: SyncIO[FunFixture[Client[IO]]] =
       authedRoutes.orNotFound.local((request: Request[IO]) => AuthedRequest(request.getContext[A], request)).asFixture
+
+  }
+
+  implicit final class Http4sMUnitKleisliResponseOps[A](kleisli: Kleisli[OptionT[IO, *], A, Response[IO]]) {
+
+    def orFail: Kleisli[IO, A, Response[IO]] =
+      Kleisli(a => kleisli.run(a).getOrElse(Assertions.fail("This should not be called", clues(a))))
 
   }
 
