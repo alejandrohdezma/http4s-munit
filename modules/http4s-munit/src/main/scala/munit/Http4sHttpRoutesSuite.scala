@@ -71,6 +71,6 @@ trait Http4sHttpRoutesSuite extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = routes.asFixture
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = routes.orFail.asFixture
 
 }

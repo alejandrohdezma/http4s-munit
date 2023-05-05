@@ -36,7 +36,7 @@ class MyHttpRoutesSuite extends munit.Http4sSuite {
   override def http4sMUnitClientFixture = HttpRoutes.of[IO] {
     case GET -> Root / "hello"        => Ok("Hi")
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
-  }.asFixture
+  }.orFail.asFixture
 
   test(GET(uri"hello" / "Jose")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "Hi Jose")
@@ -84,7 +84,9 @@ class MyAuthedRoutesSuite extends munit.Http4sSuite {
   override def http4sMUnitClientFixture = AuthedRoutes.of[String, IO] {
     case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
     case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
-  }.asFixture
+  }.orFail
+    .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
+    .asFixture
 
   test(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
@@ -333,7 +335,7 @@ class MyHttpRoutesSuite extends munit.Http4sSuite {
   override val http4sMUnitClientFixture = HttpRoutes.of[IO] {
     case GET -> Root / "hello"        => Ok("Hi")
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
-  }.asFixture
+  }.orFail.asFixture
 
 }
 
@@ -458,7 +460,7 @@ import org.http4s._
 class MySuite extends munit.Http4sSuite {
 
   override def http4sMUnitClientFixture = 
-    HttpRoutes.of[IO](_ => Ok("""{"id": 1, "name": "Jose"}""")).asFixture
+    HttpRoutes.of[IO](_ => Ok("""{"id": 1, "name": "Jose"}""")).orFail.asFixture
 
   test(GET(uri"users"))(response => assertEquals(response.status.code, 204))
 

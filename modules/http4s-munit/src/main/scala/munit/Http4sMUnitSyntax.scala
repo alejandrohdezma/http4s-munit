@@ -23,11 +23,8 @@ import cats.effect.Resource
 import cats.effect.SyncIO
 import cats.syntax.all._
 
-import org.http4s.AuthedRequest
-import org.http4s.AuthedRoutes
 import org.http4s.Header
 import org.http4s.HttpApp
-import org.http4s.HttpRoutes
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.Uri
@@ -101,24 +98,6 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
     def getContext[A](implicit key: Key[A]): A = request.attributes
       .lookup(key)
       .getOrElse(fail("Auth context not found on request, remember to add one with `.context`", clues(request)))
-
-  }
-
-  implicit final class Http4sMUnitHttpRoutesOps(httpRoutes: HttpRoutes[IO]) {
-
-    /** Transforms the provided routes into an http4s' `Client` fixture. */
-    def asFixture: SyncIO[FunFixture[Client[IO]]] = httpRoutes.orNotFound.asFixture
-
-  }
-
-  implicit final class Http4sMUnitAuthedRoutesOps[A: Key](authedRoutes: AuthedRoutes[A, IO]) {
-
-    /** Transforms the provided routes into an http4s' `Client` fixture.
-      *
-      * It uses `Request.getContext` to create the `AuthedRequest`.
-      */
-    def asFixture: SyncIO[FunFixture[Client[IO]]] =
-      authedRoutes.orNotFound.local((request: Request[IO]) => AuthedRequest(request.getContext[A], request)).asFixture
 
   }
 

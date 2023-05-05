@@ -25,8 +25,7 @@ import org.http4s._
 
 class ParallelSuite extends Http4sSuite {
 
-  override def http4sMUnitClientFixture =
-    HttpRoutes.pure[IO](Response().withEntity("hello!")).asFixture
+  override def http4sMUnitClientFixture = HttpApp.liftF[IO](Ok("hello!")).asFixture
 
   // `repeat`/`parallel`
 

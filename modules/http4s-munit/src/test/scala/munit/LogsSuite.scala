@@ -25,7 +25,7 @@ import cats.syntax.all._
 import sbt.testing.EventHandler
 import sbt.testing.TaskDef
 
-import org.http4s.HttpRoutes
+import org.http4s.HttpApp
 import org.http4s.Response
 
 /** This suite ensures that the logs outputed by this library are correct.
@@ -85,7 +85,7 @@ class LogsSuite extends FunSuite {
           |      "name" : "Jose"
           |    }
           |  ''',
-          |  r.headers: Headers = Headers(Content-Length: 25, Content-Type: text/plain; charset=UTF-8)
+          |  r.headers: Headers = Headers(Content-Type: text/plain; charset=UTF-8, Content-Length: 25)
           |}
           |=> Obtained
           |200
@@ -133,7 +133,7 @@ object LogsSuite {
 
   class SimpleSuite extends Http4sSuite {
 
-    override def http4sMUnitClientFixture = HttpRoutes.pure[IO](Response()).asFixture
+    override def http4sMUnitClientFixture = HttpApp.pure[IO](Response()).asFixture
 
     test(GET(uri"posts"))(_ => ())
 
@@ -160,8 +160,7 @@ object LogsSuite {
 
   class JsonSuite extends Http4sSuite {
 
-    override def http4sMUnitClientFixture =
-      HttpRoutes.pure[IO](Response().withEntity("""{"id": 1, "name": "Jose"}""")).asFixture
+    override def http4sMUnitClientFixture = HttpApp.liftF[IO](Ok("""{"id": 1, "name": "Jose"}""")).asFixture
 
     test(GET(uri"posts"))(r => assertEquals(r.status.code, 204))
 

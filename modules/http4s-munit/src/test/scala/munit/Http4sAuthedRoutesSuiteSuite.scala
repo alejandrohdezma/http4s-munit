@@ -18,7 +18,9 @@ package munit
 
 import cats.effect.IO
 
+import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
+import org.http4s.Request
 import org.typelevel.vault.Key
 
 class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
@@ -30,6 +32,8 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
       case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
       case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
     }
+    .orFail
+    .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
     .asFixture
 
   test(GET(uri"/hello").context("jose")).alias("Test 1") { response =>

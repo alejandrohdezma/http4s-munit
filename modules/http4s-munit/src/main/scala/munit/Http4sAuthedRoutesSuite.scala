@@ -20,6 +20,7 @@ import cats.Show
 import cats.effect.IO
 import cats.effect.SyncIO
 
+import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
 import org.http4s.Request
 import org.http4s.client.Client
@@ -77,7 +78,8 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite {
   }
 
   /** @inheritdoc */
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = routes.asFixture
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+    routes.orFail.local((r: Request[IO]) => AuthedRequest(r.getContext[A], r)).asFixture
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *

@@ -27,6 +27,7 @@ class Http4sHttpRoutesSuiteSuite extends Http4sSuite {
       case GET -> Root / "hello"        => Ok("Hi")
       case GET -> Root / "hello" / name => Ok(s"Hi $name")
     }
+    .orFail
     .asFixture
 
   test(GET(uri"/hello")).alias("Test 1") { response =>
