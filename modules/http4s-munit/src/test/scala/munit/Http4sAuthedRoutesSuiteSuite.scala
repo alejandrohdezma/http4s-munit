@@ -50,8 +50,8 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
       .orFail
       .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
   }.alias("Test 1 (overriding routes)") { response =>
-      assertIO(response.as[String], "jose: Hey")
-    }
+    assertIO(response.as[String], "jose: Hey")
+  }
 
   test(GET(uri"/hello" / "Jose").context("alex")).withHttpApp {
     AuthedRoutes
@@ -59,7 +59,7 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
       .orFail
       .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
   }.alias("Test 2 (overriding routes)") { response =>
-      assertIO(response.as[String], "alex: Hey Jose")
-    }
+    assertIO(response.as[String], "alex: Hey Jose")
+  }
 
 }

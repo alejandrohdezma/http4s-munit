@@ -44,7 +44,7 @@ import org.http4s.client.Client
 final case class Http4sMUnitTestCreator(
     request: Request[IO],
     executor: TestOptions => (Client[IO] => IO[Unit]) => Unit,
-    nameCreator: Http4sMUnitTestNameCreator = Http4sMUnitTestNameCreator.default(),
+    nameCreator: Http4sMUnitTestNameCreator = Http4sMUnitTestNameCreator.default,
     bodyPrettifier: String => String = identity,
     followingRequests: List[(String, Response[IO] => IO[Request[IO]])] = Nil,
     testOptions: TestOptions = TestOptions(""),

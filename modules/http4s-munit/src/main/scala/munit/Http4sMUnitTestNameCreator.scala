@@ -45,6 +45,13 @@ trait Http4sMUnitTestNameCreator {
       config: Http4sMUnitConfig
   ): String
 
+  /** Applies the provided list of replacements to the result of `nameFor`. */
+  def replacing(replacements: (String, String)*): Http4sMUnitTestNameCreator = andThen { (previous, _, _, _, _) =>
+    replacements.foldLeft(previous) { case (name, (value, replacement)) =>
+      name.replaceAll(value, replacement)
+    }
+  }
+
 }
 
 object Http4sMUnitTestNameCreator {
@@ -73,8 +80,7 @@ object Http4sMUnitTestNameCreator {
     *     })
     * }}}
     */
-  @SuppressWarnings(Array("scalafix:DisableSyntax.defaultArgs"))
-  def default(replacements: Seq[(String, String)] = Nil): Http4sMUnitTestNameCreator =
+  val default: Http4sMUnitTestNameCreator =
     (request, followingRequests, testOptions, config) => {
       val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
         case Nil                 => ""
@@ -89,11 +95,7 @@ object Http4sMUnitTestNameCreator {
         case _ => ""
       }
 
-      val nameWithoutReplacements = s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue$reps"
-
-      replacements.foldLeft(nameWithoutReplacements) { case (name, (value, replacement)) =>
-        name.replaceAll(value, replacement)
-      }
+      s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue$reps"
     }
 
 }
