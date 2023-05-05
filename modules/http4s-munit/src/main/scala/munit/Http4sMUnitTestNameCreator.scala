@@ -83,16 +83,13 @@ object Http4sMUnitTestNameCreator {
         case list                => s"${list.init.mkString(" (", ", ", ", and then")} ${list.last})"
       }
 
-      val context = request.attributes.lookup(RequestContext.key).map(_.asString).filterNot(_.isEmpty())
-
       val reps = config.repetitions match {
         case Some(rep) if rep > 1 =>
           s" - executed $rep times" + config.maxParallel.fold("")(paral => s" with $paral in parallel")
         case _ => ""
       }
 
-      val nameWithoutReplacements = s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}" +
-        s"$clue${context.fold("")(" as " + _)}$reps"
+      val nameWithoutReplacements = s"${request.method.name} -> ${Uri.decode(request.uri.renderString)}$clue$reps"
 
       replacements.foldLeft(nameWithoutReplacements) { case (name, (value, replacement)) =>
         name.replaceAll(value, replacement)
