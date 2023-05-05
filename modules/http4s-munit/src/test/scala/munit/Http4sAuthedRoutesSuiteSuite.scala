@@ -62,4 +62,8 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
     assertIO(response.as[String], "alex: Hey Jose")
   }
 
+  override def http4sMUnitTestNameCreator = super.http4sMUnitTestNameCreator.andThen { (previous, request, _, _, _) =>
+    s"$previous as ${request.getContext[String]}"
+  }
+
 }
