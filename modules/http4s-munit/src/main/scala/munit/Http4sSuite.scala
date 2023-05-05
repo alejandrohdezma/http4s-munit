@@ -24,14 +24,10 @@ import cats.effect.SyncIO
 import cats.syntax.all._
 
 import io.circe.parser.parse
-import org.http4s.AuthedRequest
-import org.http4s.AuthedRoutes
 import org.http4s.HttpApp
-import org.http4s.HttpRoutes
 import org.http4s.Request
 import org.http4s.Response
 import org.http4s.client.Client
-import org.typelevel.vault.Key
 
 /** Base class for all of the other suites using http4s' requests to test HTTP servers/routes.
   *
@@ -191,21 +187,6 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
       )
 
   implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
-
-    /** Allows overriding the routes used when running this test.
-      *
-      * When this method is called, the test ignores the fixture on `http4sMUnitClientFixture` and runs the request
-      * against the provided routes.
-      */
-    def withRoutes(httpRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator = withHttpApp(httpRoutes.orNotFound)
-
-    /** Allows overriding the routes used when running this test.
-      *
-      * When this method is called, the test ignores the fixture on `http4sMUnitClientFixture` and runs the request
-      * against the provided routes.
-      */
-    def withAuthedRoutes[A: Key](authedRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator =
-      withHttpApp(authedRoutes.orNotFound.local(request => AuthedRequest(request.getContext[A], request)))
 
     /** Allows overriding the app used when running this test.
       *

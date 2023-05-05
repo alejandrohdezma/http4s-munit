@@ -44,17 +44,21 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
     assertIO(response.as[String], "alex: Hi Jose")
   }
 
-  test(GET(uri"/hello").context("jose"))
-    .withAuthedRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") })
-    .alias("Test 1 (overriding routes)") { response =>
+  test(GET(uri"/hello").context("jose")).withHttpApp {
+    AuthedRoutes
+      .of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") }
+      .orFail
+      .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
+  }.alias("Test 1 (overriding routes)") { response =>
       assertIO(response.as[String], "jose: Hey")
     }
 
-  test(GET(uri"/hello" / "Jose").context("alex"))
-    .withAuthedRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user =>
-      Ok(s"$user: Hey $name")
-    })
-    .alias("Test 2 (overriding routes)") { response =>
+  test(GET(uri"/hello" / "Jose").context("alex")).withHttpApp {
+    AuthedRoutes
+      .of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hey $name") }
+      .orFail
+      .local((r: Request[IO]) => AuthedRequest(r.getContext[String], r))
+  }.alias("Test 2 (overriding routes)") { response =>
       assertIO(response.as[String], "alex: Hey Jose")
     }
 

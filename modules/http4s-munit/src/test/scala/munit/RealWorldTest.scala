@@ -45,21 +45,21 @@ class RealWorldTest extends Http4sSuite {
   }
 
   test(GET(uri"/user/1"))
-    .withRoutes(makeRoutes(_ => IO(Some("Jack"))))
+    .withHttpApp(makeRoutes(_ => IO(Some("Jack"))).orFail)
     .alias("Return Ok when user exists") { response =>
       assertEquals(response.status, Status.Ok)
       assertIO(response.as[String], "Jack")
     }
 
   test(GET(uri"/user/1"))
-    .withRoutes(makeRoutes(_ => IO(None)))
+    .withHttpApp(makeRoutes(_ => IO(None)).orFail)
     .alias("Return NotFound when user does not exist") { response =>
       assertEquals(response.status, Status.NotFound)
       assertIO(response.as[String], "User not found")
     }
 
   test(GET(uri"/user/NaN"))
-    .withRoutes(makeRoutes(_ => IO(fail("should not be called"))))
+    .withHttpApp(makeRoutes(_ => IO(fail("should not be called"))).orFail)
     .alias("Return BadRequest when user id is not a number") { response =>
       assertEquals(response.status, Status.BadRequest)
       assertIO(response.as[String], "Id is not a number")

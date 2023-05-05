@@ -39,13 +39,13 @@ class Http4sHttpRoutesSuiteSuite extends Http4sSuite {
   }
 
   test(GET(uri"/hello"))
-    .withRoutes(HttpRoutes.of[IO] { case GET -> Root / "hello" => Ok("Hey") })
+    .withHttpApp(HttpRoutes.of[IO] { case GET -> Root / "hello" => Ok("Hey") }.orFail)
     .alias("Test 1 (overriding routes)") { response =>
       assertIO(response.as[String], "Hey")
     }
 
   test(GET(uri"/hello" / "Jose"))
-    .withRoutes(HttpRoutes.of[IO] { case GET -> Root / "hello" / name => Ok(s"Hey $name") })
+    .withHttpApp(HttpRoutes.of[IO] { case GET -> Root / "hello" / name => Ok(s"Hey $name") }.orFail)
     .alias("Test 2 (overriding routes)") { response =>
       assertIO(response.as[String], "Hey Jose")
     }
