@@ -1,6 +1,6 @@
 val Scala3 = "3.2.1" // scala-steward:off
-ThisBuild / scalaVersion       := "2.13.10"
-ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.10", Scala3)
+ThisBuild / scalaVersion       := "2.13.11"
+ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.11", Scala3)
 
 ThisBuild / organization := "com.alejandrohdezma"
 
