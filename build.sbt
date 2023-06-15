@@ -1,4 +1,4 @@
-val Scala3 = "3.2.1" // scala-steward:off
+val Scala3 = "3.3.0" // scala-steward:off
 ThisBuild / scalaVersion       := "2.13.11"
 ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.11", Scala3)
 
