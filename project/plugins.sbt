@@ -1,6 +1,6 @@
 addSbtPlugin("ch.epfl.scala"             % "sbt-scalafix"          % "0.11.0")
 addSbtPlugin("com.alejandrohdezma"       % "sbt-ci"                % "2.13.3")
-addSbtPlugin("com.alejandrohdezma"       % "sbt-fix"               % "0.7.0")
+addSbtPlugin("com.alejandrohdezma"       % "sbt-fix"               % "0.7.1")
 addSbtPlugin("com.alejandrohdezma"       % "sbt-github-mdoc"       % "0.11.8")
 addSbtPlugin("com.alejandrohdezma"       % "sbt-github-header"     % "0.11.8")
 addSbtPlugin("com.alejandrohdezma"       % "sbt-scalafix-defaults" % "0.10.0")
