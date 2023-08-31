@@ -20,12 +20,15 @@ import cats.effect.IO
 
 import org.http4s.HttpRoutes
 
-class Http4sHttpRoutesSuiteSuite extends Http4sHttpRoutesSuite {
+class Http4sHttpRoutesSuiteSuite extends Http4sSuite {
 
-  override val routes: HttpRoutes[IO] = HttpRoutes.of {
-    case GET -> Root / "hello"        => Ok("Hi")
-    case GET -> Root / "hello" / name => Ok(s"Hi $name")
-  }
+  override def http4sMUnitClientFixture = HttpRoutes
+    .of[IO] {
+      case GET -> Root / "hello"        => Ok("Hi")
+      case GET -> Root / "hello" / name => Ok(s"Hi $name")
+    }
+    .orFail
+    .asFixture
 
   test(GET(uri"/hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")
@@ -36,13 +39,13 @@ class Http4sHttpRoutesSuiteSuite extends Http4sHttpRoutesSuite {
   }
 
   test(GET(uri"/hello"))
-    .withRoutes(HttpRoutes.of[IO] { case GET -> Root / "hello" => Ok("Hey") })
+    .withHttpApp(HttpRoutes.of[IO] { case GET -> Root / "hello" => Ok("Hey") }.orFail)
     .alias("Test 1 (overriding routes)") { response =>
       assertIO(response.as[String], "Hey")
     }
 
   test(GET(uri"/hello" / "Jose"))
-    .withRoutes(HttpRoutes.of[IO] { case GET -> Root / "hello" / name => Ok(s"Hey $name") })
+    .withHttpApp(HttpRoutes.of[IO] { case GET -> Root / "hello" / name => Ok(s"Hey $name") }.orFail)
     .alias("Test 2 (overriding routes)") { response =>
       assertIO(response.as[String], "Hey Jose")
     }

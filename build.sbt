@@ -4,15 +4,13 @@ ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.11", Scala3)
 
 ThisBuild / organization := "com.alejandrohdezma"
 
-addCommandAlias("ci-test", "scalafmtCheckAll; mdoc; +test")
+addCommandAlias("ci-test", "fix --check; mdoc; +test")
 addCommandAlias("ci-docs", "github; headerCreateAll; mdoc")
 addCommandAlias("ci-publish", "github; ci-release")
 
 lazy val documentation = project
   .enablePlugins(MdocPlugin)
-  .settings(mdocOut := file("."))
   .dependsOn(`http4s-munit` % "compile->test")
-  .settings(scalacOptions -= "-Wnonunit-statement")
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.15")
 
 lazy val `http4s-munit` = module

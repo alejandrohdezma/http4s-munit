@@ -16,10 +16,15 @@
 
 package munit
 
+import cats.effect.IO
+
 import io.circe.Json
 import org.http4s.circe._
+import org.http4s.ember.client.EmberClientBuilder
 
-class HttpSuiteNoBaseUriSuite extends HttpSuite {
+class HttpSuiteNoBaseUriSuite extends Http4sSuite {
+
+  override def http4sMUnitClientFixture = ResourceFunFixture(EmberClientBuilder.default[IO].build)
 
   test(GET(uri"https://api.github.com" / "users" / "gutiory")) { response =>
     assertEquals(response.status.code, 200, response.clues)

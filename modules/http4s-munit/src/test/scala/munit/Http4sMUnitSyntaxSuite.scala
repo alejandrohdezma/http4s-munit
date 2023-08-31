@@ -16,11 +16,14 @@
 
 package munit
 
+import cats.effect.IO
 import cats.effect._
 
+import org.http4s.Header
 import org.http4s.client.Client
+import org.typelevel.ci._
 
-class ClientSuiteSuite extends ClientSuite {
+class Http4sMUnitSyntaxSuite extends CatsEffectSuite with Http4sMUnitSyntax {
 
   class PingService[F[_]: Async](client: Client[F]) {
 
@@ -28,7 +31,7 @@ class ClientSuiteSuite extends ClientSuite {
 
   }
 
-  val fixture = Client.fixture(client => Resource.pure(new PingService[IO](client)))
+  val fixture = Client.partialFixture(client => Resource.pure(new PingService[IO](client)))
 
   fixture { case GET -> Root / "ping" =>
     Ok("pong")
@@ -36,6 +39,12 @@ class ClientSuiteSuite extends ClientSuite {
     val result = service.ping()
 
     assertIO(result, "pong")
+  }
+
+  test("header interpolator creates a valid raw header") {
+    val header = ci"my-header" := "my-value"
+
+    assertEquals(header, Header.Raw(ci"my-header", "my-value"))
   }
 
 }

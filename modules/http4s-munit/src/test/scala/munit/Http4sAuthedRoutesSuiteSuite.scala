@@ -18,16 +18,22 @@ package munit
 
 import cats.effect.IO
 
+import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
+import org.typelevel.vault.Key
 
-class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
+class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
 
-  override val routes: org.http4s.AuthedRoutes[String, IO] = AuthedRoutes.of {
-    case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
-    case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
-  }
+  implicit val key: Key[String] = Key.newKey[IO, String].unsafeRunSync()
 
-  test(GET(uri"/hello") -> "jose").alias("Test 1") { response =>
+  override def http4sMUnitClientFixture = AuthedRequest.fromContext.andThen {
+    AuthedRoutes.of[String, IO] {
+      case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
+      case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
+    }
+  }.orFail.asFixture
+
+  test(GET(uri"/hello").context("jose")).alias("Test 1") { response =>
     assertIO(response.as[String], "jose: Hi")
   }
 
@@ -35,16 +41,26 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sAuthedRoutesSuite[String] {
     assertIO(response.as[String], "alex: Hi Jose")
   }
 
-  test(GET(uri"/hello") -> "jose")
-    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") })
-    .alias("Test 1 (overriding routes)") { response =>
-      assertIO(response.as[String], "jose: Hey")
-    }
+  test(GET(uri"/hello").context("jose")).withHttpApp {
+    AuthedRequest
+      .fromContext[String]
+      .andThen(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" as user => Ok(s"$user: Hey") })
+      .orFail
+  }.alias("Test 1 (overriding routes)") { response =>
+    assertIO(response.as[String], "jose: Hey")
+  }
 
-  test(GET(uri"/hello" / "Jose").context("alex"))
-    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hey $name") })
-    .alias("Test 2 (overriding routes)") { response =>
-      assertIO(response.as[String], "alex: Hey Jose")
-    }
+  test(GET(uri"/hello" / "Jose").context("alex")).withHttpApp {
+    AuthedRequest
+      .fromContext[String]
+      .andThen(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / name as user => Ok(s"$user: Hey $name") })
+      .orFail
+  }.alias("Test 2 (overriding routes)") { response =>
+    assertIO(response.as[String], "alex: Hey Jose")
+  }
+
+  override def http4sMUnitTestNameCreator = super.http4sMUnitTestNameCreator.andThen { (previous, request, _, _, _) =>
+    s"$previous as ${request.getContext[String]}"
+  }
 
 }

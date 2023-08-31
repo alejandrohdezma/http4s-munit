@@ -61,6 +61,7 @@ import org.http4s.dsl.Http4sDslBinCompat
   * @author
   *   Alejandro Hernández
   */
+@deprecated("Extend Http4sMUnitSyntax instead", since = "0.16.0")
 trait ClientSuite extends CatsEffectSuite with Http4sDslBinCompat[IO] {
 
   implicit class ClientTypeOps(t: Client.type) {
