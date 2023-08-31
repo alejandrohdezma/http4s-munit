@@ -115,8 +115,8 @@ trait HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
 
   @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
   def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    ResourceFixture {
-      http4sMUnitClient.map { client => request =>
+    ResourceFunFixture {
+      http4sMUnitClient.map { client => (request: Request[IO]) =>
         if (baseUri() == Uri()) client.run(request)
         else client.run(request.withUri(baseUri().resolve(request.uri)))
       }

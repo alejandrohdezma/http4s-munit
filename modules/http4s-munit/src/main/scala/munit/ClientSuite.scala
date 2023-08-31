@@ -94,7 +94,7 @@ trait ClientSuite extends CatsEffectSuite with Http4sDslBinCompat[IO] {
     def fixture[A](
         f: Client[IO] => Resource[IO, A]
     ): PartialFunction[Request[IO], IO[Response[IO]]] => SyncIO[FunFixture[A]] =
-      pf => ResourceFixture(f(from(pf)))
+      pf => ResourceFunFixture(f(from(pf)))
 
   }
 

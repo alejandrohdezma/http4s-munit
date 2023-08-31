@@ -17,15 +17,15 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(Test / fork := true)
-  .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
+  .settings(libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M8")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.23")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.23")
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.23" % Optional)
-  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
+  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect" % "2.0.0-M3")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.5")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.11" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.23" % Test)
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.16" % Test)
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.41.0" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.23" % Test)
   .settings(
     libraryDependencies ++= CrossVersion
