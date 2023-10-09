@@ -63,66 +63,8 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     *       case (head: User) :: _ => GET(uri"users" / head.id.show)
     *     })
     * }}}
-    *
-    * @param request
-    *   the test's request
-    * @param followingRequests
-    *   the following request' aliases
-    * @param testOptions
-    *   the options for the current test
-    * @param config
-    *   the configuration for this test
-    * @return
-    *   the test's name
     */
-  @deprecated(message = "Use `http4sMUnitTestNameCreator` instead", since = "0.16.0")
-  def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
-    request,
-    followingRequests,
-    testOptions,
-    config,
-    http4sMUnitNameCreatorReplacements()
-  )
-
-  /** List of replacements that will be applied to the result of `http4sMUnitNameCreator` using `String#replaceAll` */
-  @deprecated(
-    message = "Override `http4sMUnitTestNameCreator` instead and provide replacements to `default` constructor",
-    since = "0.16.0"
-  )
-  def http4sMUnitNameCreatorReplacements(): Seq[(String, String)] = Nil
-
-  /** Allows altering the name of the generated tests.
-    *
-    * By default it will generate test names like:
-    *
-    * {{{
-    * // GET -> users/42
-    * test(GET(uri"users" / 42))
-    *
-    * // GET -> users (All users)
-    * test(GET(uri"users")).alias("All users")
-    *
-    * // GET -> users as user-1
-    * test(GET(uri"users").as("user-1"))
-    *
-    * // GET -> users - executed 10 times with 2 in parallel
-    * test(GET(uri"users")).repeat(10).parallel(2)
-    *
-    * // GET -> users (retrieve the list of users and get the first user from the list)
-    * test(GET(uri"users"))
-    *     .alias("retrieve the list of users")
-    *     .andThen("get the first user from the list")(_.as[List[User]].flatMap {
-    *       case Nil               => fail("The list of users should not be empty")
-    *       case (head: User) :: _ => GET(uri"users" / head.id.show)
-    *     })
-    * }}}
-    */
-  def http4sMUnitTestNameCreator: Http4sMUnitTestNameCreator = http4sMUnitNameCreator(_, _, _, _): @nowarn
+  def http4sMUnitTestNameCreator: Http4sMUnitTestNameCreator = Http4sMUnitTestNameCreator.default
 
   /** Returns the response as suite clues.
     *
@@ -135,16 +77,6 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     */
   def http4sMUnitResponseClueCreator(response: Response[IO]): Clues =
     clues(response.headers.show, response.status.show)
-
-  /** Fixture to run a request against this suite */
-  @deprecated("Use `http4sMUnitClientFixture` instead", since = "0.16.0")
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    http4sMUnitClientFixture.map { fixture =>
-      FunFixture.async(
-        setup = options => fixture.setup(options).map(_.run _),
-        teardown = f => fixture.teardown(Client.apply(f))
-      )
-    }
 
   /** Fixture that creates the client which will be used to execute this suite's requests. */
   def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]]
@@ -263,7 +195,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
   def test(request: Request[IO]): Http4sMUnitTestCreator =
     Http4sMUnitTestCreator(
       request = request,
-      executor = options => f => (http4sMUnitFunFixture: @nowarn).test(options)(client => f(Client[IO](client))),
+      executor = http4sMUnitClientFixture.test,
       nameCreator = http4sMUnitTestNameCreator,
       bodyPrettifier = http4sMUnitBodyPrettifier
     )
