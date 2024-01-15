@@ -9,7 +9,7 @@ changelog:
     labels:
       - ":chart_with_upwards_trend: dependency-update"
     authors:
-      - alejandrohdezma-steward
+      - dependabot
   categories:
     - title: "⚠️ Breaking changes"
       labels:
