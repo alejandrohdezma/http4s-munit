@@ -20,13 +20,13 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.25")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.25")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.24" % Optional)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.25" % Optional)
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.6")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.14" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.25" % Test)
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.16" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.24" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.25" % Test)
   .settings(
     libraryDependencies ++= CrossVersion
       .partialVersion(scalaVersion.value)
