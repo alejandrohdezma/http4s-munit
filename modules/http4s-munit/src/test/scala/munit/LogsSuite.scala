@@ -43,15 +43,15 @@ class LogsSuite extends FunSuite {
     val obtained = execute[LogsSuite.SimpleSuite]
 
     val expected =
-      s"""|==> Success GET -> posts
-          |==> Success GET -> posts/1
-          |==> Success GET -> posts/2 (get second post)
-          |==> Success GET -> posts/3 - executed 12 times with 5 in parallel
-          |==> Success GET -> posts/1 (get first post)
-          |==> Success GET -> posts/1 (get first post and then second post)
-          |==> Success GET -> posts/1 (get 1st post and 2nd secuentially)
-          |==> Success GET -> posts/1 (get first and second posts secuentially)
-          |""".stripMargin
+      """|==> Success GET -> posts
+         |==> Success GET -> posts/1
+         |==> Success GET -> posts/2 (get second post)
+         |==> Success GET -> posts/3 - executed 12 times with 5 in parallel
+         |==> Success GET -> posts/1 (get first post)
+         |==> Success GET -> posts/1 (get first post and then second post)
+         |==> Success GET -> posts/1 (get 1st post and 2nd secuentially)
+         |==> Success GET -> posts/1 (get first and second posts secuentially)
+         |""".stripMargin
 
     assertNoDiff(obtained, expected)
   }
