@@ -1,6 +1,7 @@
 val Scala3 = "3.3.0" // scala-steward:off
-ThisBuild / scalaVersion       := "2.13.12"
-ThisBuild / crossScalaVersions := Seq("2.12.18", "2.13.12", Scala3)
+ThisBuild / scalaVersion           := "2.13.12"
+ThisBuild / crossScalaVersions     := Seq("2.12.18", "2.13.12", Scala3)
+ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
 
 ThisBuild / organization := "com.alejandrohdezma"
 
@@ -10,9 +11,7 @@ addCommandAlias("ci-publish", "github; ci-release")
 
 lazy val documentation = project
   .enablePlugins(MdocPlugin)
-  .settings(mdocOut := file("."))
   .dependsOn(`http4s-munit` % "compile->test")
-  .settings(scalacOptions -= "-Wnonunit-statement")
   .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.16")
 
 lazy val `http4s-munit` = module
@@ -27,9 +26,6 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.25" % Test)
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.16" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.25" % Test)
-  .settings(
-    libraryDependencies ++= CrossVersion
-      .partialVersion(scalaVersion.value)
-      .collect { case (2, _) => compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full) }
-      .toList
-  )
+  .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
+
+def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full)
