@@ -5,9 +5,9 @@ ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
 
 ThisBuild / organization := "com.alejandrohdezma"
 
-addCommandAlias("ci-test", "scalafmtCheckAll; mdoc; +test")
+addCommandAlias("ci-test", "scalafmtCheckAll; versionPolicyCheck; mdoc; +test")
 addCommandAlias("ci-docs", "github; headerCreateAll; mdoc")
-addCommandAlias("ci-publish", "github; ci-release")
+addCommandAlias("ci-publish", "versionCheck; github; ci-release")
 
 lazy val documentation = project
   .enablePlugins(MdocPlugin)
