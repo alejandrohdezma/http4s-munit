@@ -1,6 +1,6 @@
 val Scala3 = "3.3.0" // scala-steward:off
-ThisBuild / scalaVersion           := "2.13.12"
-ThisBuild / crossScalaVersions     := Seq("2.12.18", "2.13.12", Scala3)
+ThisBuild / scalaVersion           := "2.13.13"
+ThisBuild / crossScalaVersions     := Seq("2.12.19", "2.13.13", Scala3)
 ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
 
 ThisBuild / organization := "com.alejandrohdezma"
@@ -22,10 +22,10 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.25" % Optional)
   .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.6")
-  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.4.14" % Test)
+  .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.1" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.25" % Test)
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.16" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.25" % Test)
   .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
 
-def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full)
+def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.3").cross(CrossVersion.full)
