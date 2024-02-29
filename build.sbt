@@ -1,6 +1,6 @@
 val Scala3 = "3.3.0" // scala-steward:off
 ThisBuild / scalaVersion           := "2.13.12"
-ThisBuild / crossScalaVersions     := Seq("2.12.18", "2.13.12", Scala3)
+ThisBuild / crossScalaVersions     := Seq("2.12.19", "2.13.12", Scala3)
 ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
 
 ThisBuild / organization := "com.alejandrohdezma"
