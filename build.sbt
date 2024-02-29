@@ -28,4 +28,4 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.25" % Test)
   .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
 
-def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2").cross(CrossVersion.full)
+def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.3").cross(CrossVersion.full)
