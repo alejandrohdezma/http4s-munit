@@ -192,7 +192,7 @@ import org.http4s.ember.client.EmberClientBuilder
 class GitHubSuite extends munit.Http4sSuite {
 
   override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
-    ResourceFunFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(uri"https://api.github.com")))
+    ResourceFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(uri"https://api.github.com")))
 
   test(GET(uri"users/gutiory")) { response =>
     assertEquals(response.status.code, 200)
@@ -209,7 +209,7 @@ class GitHubSuite extends munit.Http4sSuite {
 >
 > ```scala
 > override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
->   ResourceFunFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(8080))))
+>   ResourceFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(8080))))
 > ```
 
 ### Testing an HTTP server running inside a container
@@ -238,7 +238,7 @@ class TestContainersSuite extends munit.Http4sSuite with TestContainersFixtures 
 
   override def munitFixtures = List(container)
 
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFixture {
     EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container().mappedPort(80))))
   }
 
@@ -264,7 +264,7 @@ class TestContainersSuite extends munit.Http4sSuite {
 
   lazy val container = GenericContainer(dockerImage = "nginxdemos/hello", exposedPorts = List(80))
 
-  override def http4sMUnitClientFixture = ResourceFunFixture {
+  override def http4sMUnitClientFixture = ResourceFixture {
     Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
       EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
   }
@@ -282,7 +282,7 @@ class TestContainersSuite extends munit.Http4sSuite {
 
 Sometimes (specially when you are testing against a real server) you need something to be
 run before running your test. On these cases, you can just create a
-`ResourceFunFixture[Client[IO]]` (in which you can add other effects) and run it with `test`.
+`ResourceFixture[Client[IO]]` (in which you can add other effects) and run it with `test`.
 
 Essentially this is the same as just running `test` since it is just an alias for
 `http4sMUnitClientFixture.test`.
@@ -301,9 +301,9 @@ class MyBookstoreSuite extends munit.Http4sSuite {
 
   def httpClient = EmberClientBuilder.default[IO].build
 
-  override def http4sMUnitClientFixture = ResourceFunFixture(httpClient)
+  override def http4sMUnitClientFixture = ResourceFixture(httpClient)
 
-  ResourceFunFixture {
+  ResourceFixture {
     httpClient.flatTap { client =>
       Resource.make {
         val newBook = Json.obj("name":= "The Lord Of The Rings")
@@ -515,7 +515,7 @@ import org.typelevel.ci._
 
 class TestContainersSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClientFixture = ResourceFunFixture {
+  override def http4sMUnitClientFixture = ResourceFixture {
     Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
       EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
   }

@@ -28,7 +28,7 @@ object Http4sMUnitDefaults {
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig,
-      replacements: Seq[(String, String)] = Nil // scalafix:ok
+      replacements: Seq[(String, String)] = Nil
   ): String = Http4sMUnitTestNameCreator.default
     .replacing(replacements: _*)
     .nameFor(request, followingRequests, testOptions, config)

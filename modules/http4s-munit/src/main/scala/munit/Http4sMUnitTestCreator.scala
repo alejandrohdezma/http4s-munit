@@ -82,7 +82,7 @@ final case class Http4sMUnitTestCreator(
   def doNotRepeat = copy(config = Http4sMUnitConfig(None, None, config.showAllStackTraces))
 
   /** Allows to run the tests in parallel */
-  def parallel(maxParallel: Int = 5 /* scalafix:ok */ ) =
+  def parallel(maxParallel: Int = 5) =
     if (maxParallel < 1) Assertions.fail("maxParallel must be > 0")
     else copy(config = Http4sMUnitConfig(config.repetitions, maxParallel.some, config.showAllStackTraces))
 

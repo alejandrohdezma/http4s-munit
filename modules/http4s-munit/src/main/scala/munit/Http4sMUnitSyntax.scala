@@ -74,7 +74,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
     def partialFixture[A](
         f: Client[IO] => Resource[IO, A]
     ): PartialFunction[Request[IO], IO[Response[IO]]] => SyncIO[FunFixture[A]] =
-      pf => ResourceFunFixture(f(from(pf)))
+      pf => ResourceFixture(f(from(pf)))
 
   }
 
@@ -133,7 +133,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
     /** Transforms the provided app into an http4s' `Client` fixture. */
     def asFixture: SyncIO[FunFixture[Client[IO]]] =
-      ResourceFunFixture(Client.fromHttpApp(httpApp).pure[Resource[IO, *]])
+      ResourceFixture(Client.fromHttpApp(httpApp).pure[Resource[IO, *]])
 
   }
 
@@ -146,7 +146,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
     def withUpdatedUri(f: Uri => Uri): Client[IO] = Client(request => client.run(request.withUri(f(request.uri))))
 
     /** Transforms the provided client into a `FunFixture`. */
-    def asFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture(client.pure[Resource[IO, *]])
+    def asFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFixture(client.pure[Resource[IO, *]])
 
   }
 

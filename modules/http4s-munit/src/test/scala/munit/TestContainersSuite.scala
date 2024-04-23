@@ -30,7 +30,7 @@ class TestContainersSuite extends munit.Http4sSuite {
   lazy val container = GenericContainer(dockerImage = "nginxdemos/hello", exposedPorts = List(80))
 
   /** This will start/stop a hello server before/after every test */
-  override def http4sMUnitClientFixture = ResourceFunFixture {
+  override def http4sMUnitClientFixture = ResourceFixture {
     Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
       EmberClientBuilder.default[IO].build.map(_.withUpdatedUri(localhost.withPort(container.mappedPort(80)).resolve))
   }
