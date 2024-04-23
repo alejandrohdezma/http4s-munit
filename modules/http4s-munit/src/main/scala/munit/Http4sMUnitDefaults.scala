@@ -16,46 +16,21 @@
 
 package munit
 
-import cats.Show
 import cats.effect.IO
-import cats.syntax.all._
 
-import org.http4s.ContextRequest
-import org.http4s.Uri
+import org.http4s.Request
 
 object Http4sMUnitDefaults {
 
-  def http4sMUnitNameCreator[A: Show](
-      request: ContextRequest[IO, A],
+  @deprecated("Use Http4sMUnitTestNameCreator.default instead", since = "0.16.0")
+  def http4sMUnitNameCreator(
+      request: Request[IO],
       followingRequests: List[String],
       testOptions: TestOptions,
       config: Http4sMUnitConfig,
-      replacements: Seq[(String, String)] = Nil // scalafix:ok
-  ): String = {
-    val clue = followingRequests.+:(testOptions.name).filter(_.nonEmpty) match {
-      case Nil                 => ""
-      case List(head)          => s" ($head)"
-      case List(first, second) => s" ($first and then $second)"
-      case list                => s"${list.init.mkString(" (", ", ", ", and then")} ${list.last})"
-    }
-
-    val context = request.context match {
-      case _: Unit => None
-      case context => context.show.some.filterNot(_.isEmpty())
-    }
-
-    val reps = config.repetitions match {
-      case Some(rep) if rep > 1 =>
-        s" - executed $rep times" + config.maxParallel.fold("")(paral => s" with $paral in parallel")
-      case _ => ""
-    }
-
-    val nameWithoutReplacements = s"${request.req.method.name} -> ${Uri.decode(request.req.uri.renderString)}" +
-      s"$clue${context.fold("")(" as " + _)}$reps"
-
-    replacements.foldLeft(nameWithoutReplacements) { case (name, (value, replacement)) =>
-      name.replaceAll(value, replacement)
-    }
-  }
+      replacements: Seq[(String, String)] = Nil
+  ): String = Http4sMUnitTestNameCreator.default
+    .replacing(replacements: _*)
+    .nameFor(request, followingRequests, testOptions, config)
 
 }

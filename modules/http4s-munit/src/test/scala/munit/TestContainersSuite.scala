@@ -25,10 +25,15 @@ import org.http4s._
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci._
 
-class TestContainersSuite extends munit.HttpSuite {
+class TestContainersSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient =
-    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+  lazy val container = GenericContainer(dockerImage = "nginxdemos/hello", exposedPorts = List(80))
+
+  /** This will start/stop a hello server before/after every test */
+  override def http4sMUnitClientFixture = ResourceFunFixture {
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
+      EmberClientBuilder.default[IO].build.map(_.withUpdatedUri(localhost.withPort(container.mappedPort(80)).resolve))
+  }
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
     val logs = response.headers
@@ -39,10 +44,6 @@ class TestContainersSuite extends munit.HttpSuite {
 
     clues(response, logs)
   }
-
-  lazy val container = GenericContainer(dockerImage = "nginxdemos/hello", exposedPorts = List(80))
-
-  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container.mappedPort(80)}")
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200, response.clues)

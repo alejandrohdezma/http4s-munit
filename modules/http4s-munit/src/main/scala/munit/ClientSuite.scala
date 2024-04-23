@@ -61,6 +61,7 @@ import org.http4s.dsl.Http4sDslBinCompat
   * @author
   *   Alejandro Hernández
   */
+@deprecated("Extend Http4sMUnitSyntax instead", since = "0.16.0")
 trait ClientSuite extends CatsEffectSuite with Http4sDslBinCompat[IO] {
 
   implicit class ClientTypeOps(t: Client.type) {
@@ -94,7 +95,7 @@ trait ClientSuite extends CatsEffectSuite with Http4sDslBinCompat[IO] {
     def fixture[A](
         f: Client[IO] => Resource[IO, A]
     ): PartialFunction[Request[IO], IO[Response[IO]]] => SyncIO[FunFixture[A]] =
-      pf => ResourceFixture(f(from(pf)))
+      pf => ResourceFunFixture(f(from(pf)))
 
   }
 

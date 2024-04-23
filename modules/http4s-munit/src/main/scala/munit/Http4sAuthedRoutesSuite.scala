@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package munit
 
-import cats.Show
 import cats.effect.IO
-import cats.effect.Resource
 import cats.effect.SyncIO
 
 import org.http4s.AuthedRequest
 import org.http4s.AuthedRoutes
-import org.http4s.ContextRequest
 import org.http4s.Request
-import org.http4s.Response
+import org.http4s.client.Client
+import org.typelevel.vault.Key
 
 /** Base class for suites testing `AuthedRoutes`.
   *
@@ -53,42 +51,20 @@ import org.http4s.Response
   * }
   *   }}}
   */
-abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedRequest[IO, A]] {
+@deprecated("Use `Http4sSuite` overriding `http4sMUnitClientFixture` instead", since = "0.16.0")
+abstract class Http4sAuthedRoutesSuite[A] extends Http4sSuite {
+
+  @SuppressWarnings(Array("scalafix:DisableSyntax.valInAbstract"))
+  implicit val key: Key[A] = Key.newKey[IO, A].unsafeRunSync()
 
   /** The HTTP routes being tested */
   val routes: AuthedRoutes[A, IO]
 
-  /** @inheritdoc */
-  override def http4sMUnitNameCreator(
-      request: AuthedRequest[IO, A],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
-    request,
-    followingRequests,
-    testOptions,
-    config,
-    http4sMUnitNameCreatorReplacements()
-  )
-
   implicit class Request2AuthedRequest(request: Request[IO]) {
 
-    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
-    def context(context: A): AuthedRequest[IO, A] = AuthedRequest(context, request)
-
-    /** Converts an `IO[Request[IO]]` into an `IO[AuthedRequest[IO, A]]` by providing the `A` context. */
-    def ->(a: A): AuthedRequest[IO, A] = context(a)
-
-  }
-
-  implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
-
-    /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: AuthedRoutes[A, IO]): Http4sMUnitTestCreator = creator.copy(
-      http4sMUnitFunFixture =
-        SyncIO.pure(FunFixture(_ => req => newRoutes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
-    )
+    /** Alias for adding a request's context. */
+    @deprecated("Use `.context` instead", since = "0.16.0")
+    def ->(a: A): Request[IO] = request.context(a)
 
   }
 
@@ -100,8 +76,9 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
 
   }
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[ContextRequest[IO, A] => Resource[IO, Response[IO]]]] =
-    SyncIO.pure(FunFixture(_ => routes.orNotFound.run(_).to[Resource[IO, *]], _ => ()))
+  /** @inheritdoc */
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+    AuthedRequest.fromContext[A].andThen(routes).orFail.asFixture
 
   /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
     *
@@ -126,7 +103,11 @@ abstract class Http4sAuthedRoutesSuite[A: Show] extends Http4sSuite[AuthedReques
     * }
     *   }}}
     */
-  def test(request: AuthedRequest[IO, A]): Http4sMUnitTestCreator =
-    Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+  override def test(request: Request[IO]): Http4sMUnitTestCreator = {
+    if (!request.attributes.contains(key))
+      fail("Auth context not found on request, remember to add one with `.context`", clues(request))
+
+    super.test(request)
+  }
 
 }

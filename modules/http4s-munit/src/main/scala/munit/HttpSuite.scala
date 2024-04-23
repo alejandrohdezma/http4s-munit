@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,9 +20,7 @@ import cats.effect.IO
 import cats.effect.Resource
 import cats.effect.SyncIO
 
-import org.http4s.ContextRequest
 import org.http4s.Request
-import org.http4s.Response
 import org.http4s.Uri
 import org.http4s.client.Client
 import org.http4s.ember.client.EmberClientBuilder
@@ -70,25 +68,11 @@ import org.http4s.ember.client.EmberClientBuilder
   * @author
   *   José Gutiérrez
   */
-trait HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
+@deprecated("Use munit.Http4sSuite with a provided http4s` Client instead", since = "0.16.0")
+trait HttpSuite extends Http4sSuite {
 
   /** The base URI for all tests. This URI will prepend the one used in each test's request. */
   def baseUri(): Uri = Uri()
-
-  /** @inheritdoc */
-  override def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String =
-    Http4sMUnitDefaults.http4sMUnitNameCreator(
-      ContextRequest((), request),
-      followingRequests,
-      testOptions,
-      config,
-      http4sMUnitNameCreatorReplacements()
-    )
 
   /** This client is used under the hood to execute the requests. */
   def http4sMUnitClient: Resource[IO, Client[IO]] = try
@@ -101,51 +85,13 @@ trait HttpSuite extends Http4sSuite[Request[IO]] with CatsEffectFunFixtures {
       ) // scalafix:ok
   }
 
-  val localhost = uri"http://localhost" // scalafix:ok
-
-  implicit class UriWithPort(uri: Uri) {
-
-    /** Allows changing the URIs port */
-    def withPort(port: Int): Uri = {
-      val authority = uri.authority.fold(Uri.Authority(port = Some(port)))(_.copy(port = Some(port)))
-      uri.copy(authority = Some(authority))
-    }
-
-  }
-
+  /** @inheritdoc */
   @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    ResourceFixture {
-      http4sMUnitClient.map { client => request =>
-        if (baseUri() == Uri()) client.run(request)
-        else client.run(request.withUri(baseUri().resolve(request.uri)))
-      }
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
+    http4sMUnitClient.map { client =>
+      if (baseUri() == Uri()) client
+      else Client((request: Request[IO]) => client.run(request.withUri(baseUri().resolve(request.uri))))
     }
-
-  /** Declares a test for the provided request. That request will be executed using the provided client in `httpClient`
-    * (and prepending the `baseUri` URI if it is not empty).
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)) { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(POST(json, uri"users")).alias("Create a new user") { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)).flaky { response =>
-    *     // test body
-    * }
-    *   }}}
-    */
-  def test(request: Request[IO]) = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+  }
 
 }
