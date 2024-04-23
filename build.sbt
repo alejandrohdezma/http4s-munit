@@ -15,11 +15,11 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(Test / fork := true)
-  .settings(libraryDependencies += "org.scalameta" %% "munit" % "0.7.29")
+  .settings(libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-M12")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.26")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.26")
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.26" % Optional)
-  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect-3" % "1.0.7")
+  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect" % "2.0.0-M5")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.6")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.5" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.26" % Test)

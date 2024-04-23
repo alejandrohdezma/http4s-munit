@@ -87,7 +87,7 @@ trait HttpSuite extends Http4sSuite {
 
   /** @inheritdoc */
   @SuppressWarnings(Array("scalafix:DisableSyntax.=="))
-  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFixture {
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
     http4sMUnitClient.map { client =>
       if (baseUri() == Uri()) client
       else Client((request: Request[IO]) => client.run(request.withUri(baseUri().resolve(request.uri))))

@@ -29,11 +29,11 @@ class HttpSuiteSuite extends Http4sSuite {
 
   def httpClient = EmberClientBuilder.default[IO].build.map(_.withUpdatedUri(uri"https://api.github.com".resolve))
 
-  override def http4sMUnitClientFixture = ResourceFixture(httpClient)
+  override def http4sMUnitClientFixture = ResourceFunFixture(httpClient)
 
   var clientFixtureResult: String = null
 
-  ResourceFixture {
+  ResourceFunFixture {
     httpClient.flatTap { client =>
       client
         .expect[Json](uri"repos/alejandrohdezma/http4s-munit")

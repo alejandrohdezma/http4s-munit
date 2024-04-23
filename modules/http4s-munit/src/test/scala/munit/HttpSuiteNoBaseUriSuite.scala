@@ -24,7 +24,7 @@ import org.http4s.ember.client.EmberClientBuilder
 
 class HttpSuiteNoBaseUriSuite extends Http4sSuite {
 
-  override def http4sMUnitClientFixture = ResourceFixture(EmberClientBuilder.default[IO].build)
+  override def http4sMUnitClientFixture = ResourceFunFixture(EmberClientBuilder.default[IO].build)
 
   test(GET(uri"https://api.github.com" / "users" / "gutiory")) { response =>
     assertEquals(response.status.code, 200, response.clues)
