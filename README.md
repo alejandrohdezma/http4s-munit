@@ -13,6 +13,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
   - [Testing a remote HTTP server](#testing-a-remote-http-server)
   - [Testing an HTTP server running inside a container](#testing-an-http-server-running-inside-a-container)
 - [Other features](#other-features)
+  - [Running an effect before running your test](#running-an-effect-before-running-your-test)
   - [Tagging your tests](#tagging-your-tests)
   - [Stress-testing](#stress-testing)
   - [Nested requests](#nested-requests)
@@ -25,7 +26,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.15.1" % Test
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "1.0.0-M1" % Test
 ```
 
 ## Contributors to this project
@@ -36,21 +37,24 @@ libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "0.15.1" % Test
 
 ## Usage
 
+This library provides a new type of suite (`Http4sSuite`) that you can use for
+several things:
+
 ### Testing `HttpRoutes`
 
-We can use the `Http4sHttpRoutesSuite` to write tests for an `HttpRoutes` using `Request[IO]` values easily:
+We can use the `Http4Suite` to write tests for an `HttpRoutes` using `Request[IO]` values easily:
 
 ```scala
 import cats.effect.IO
 
 import org.http4s._
 
-class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
+class MyHttpRoutesSuite extends munit.Http4sSuite {
 
-  override val routes: HttpRoutes[IO] = HttpRoutes.of {
+  override def http4sMUnitClientFixture = HttpRoutes.of[IO] {
     case GET -> Root / "hello"        => Ok("Hi")
     case GET -> Root / "hello" / name => Ok(s"Hi $name")
-  }
+  }.orFail.asFixture
 
   test(GET(uri"hello" / "Jose")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "Hi Jose")
@@ -58,7 +62,7 @@ class MyHttpRoutesSuite extends munit.Http4sHttpRoutesSuite {
 
   // You can also override routes per-test
   test(GET(uri"hello" / "Jose"))
-    .withRoutes(HttpRoutes.of[IO] { case GET -> Root / "hello" / _=> Ok("Hi") })
+    .withHttpApp(HttpRoutes.of[IO] { case GET -> Root / "hello" / _=> Ok("Hi") }.orFail)
     .alias("Overriden routes") { response =>
       assertIO(response.as[String], "Hi")
     }
@@ -77,27 +81,42 @@ munit.MyHttpRoutesSuite:0s
 
 ### Testing `AuthedRoutes`
 
-If we want to test authenticated routes (`AuthedRoutes` in http4s) we can use the `Http4sAuthedRoutesSuite`. It is completely similar to the previous suite, except that we need to ensure a `Show` instance is available for the auth "context" type and that we need to provide `AuthedRequest` instead of `Request` in the `test` definition. We can do this using its own constructor or by using our extension function `context` or `->`:
+If we want to test authenticated routes (`AuthedRoutes` in http4s) it will be
+completely similar to the previous section, except that we need to ensure we
+provide the context in the request. The library provides a couple methods to
+simplify this: `context` and `getContext`.
+
+For both of them you need to have an implicit `Key[A]` instance (being `A`
+your context's type) in scope.
 
 ```scala
 import cats.effect.IO
 
 import org.http4s._
+import org.typelevel.vault.Key
 
-class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
+class MyAuthedRoutesSuite extends munit.Http4sSuite {
 
-  override val routes: AuthedRoutes[String, IO] = AuthedRoutes.of {
-    case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
-    case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
-  }
+  implicit val key: Key[String] = Key.newKey[IO, String].unsafeRunSync()
+
+  override def http4sMUnitClientFixture = AuthedRequest.fromContext[String].andThen {
+    AuthedRoutes.of[String, IO] {
+      case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
+      case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
+    }
+  }.orFail.asFixture
 
   test(GET(uri"hello" / "Jose").context("alex")).alias("Say hello to Jose") { response =>
     assertIO(response.as[String], "alex: Hi Jose")
   }
 
   // You can also override routes per-test
-  test(GET(uri"hello" / "Jose") -> "alex")
-    .withRoutes(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
+  test(GET(uri"hello" / "Jose").context("alex"))
+    .withHttpApp {
+      AuthedRequest.fromContext[String]
+        .andThen(AuthedRoutes.of[String, IO] { case GET -> Root / "hello" / _ as _ => Ok("Hey") })
+        .orFail
+    }
     .alias("Overriden routes") { response =>
       assertIO(response.as[String], "Hey")
     }
@@ -107,16 +126,16 @@ class MyAuthedRoutesSuite extends munit.Http4sAuthedRoutesSuite[String] {
 
 ### Using a mocked http4s `Client`
 
-If you want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `ClientSuite`.
+If you just want to add tests for a class or algebra that uses a `Client` instance you can make your suite extend `Http4sMUnitSyntax` (it also requires extending `CatsEffectSuite`).
 
-It adds two extension methods to the `Client` companion object: `from` and `fixture`.
+It includes a handful of utilities among which are two extension methods to the `Client` companion object: `from` and `partialFixture`.
 
 `Client.from` lets you create a mocked client from a partial function representing routes:
 
 ```scala
 import org.http4s.client.Client
 
-class ClientSuiteSuite extends munit.ClientSuite {
+class ClientSuiteSuite extends munit.CatsEffectSuite with munit.Http4sMUnitSyntax {
 
   val client = Client.from {
     case GET -> Root / "ping" => Ok("pong")
@@ -125,7 +144,7 @@ class ClientSuiteSuite extends munit.ClientSuite {
 }
 ```
 
-On the other hand, the class also provides another extension method: `Client.fixture`. This method is inteded to be used to easily create a fixture for testing a class that uses an http4s' `Client`.
+On the other hand, the class also provides another extension method: `Client.partialFixture`. This method is inteded to be used to easily create a fixture for testing a class that uses an http4s' `Client`.
 
 Given an algebra like:
 
@@ -152,15 +171,15 @@ object PingService {
 }
 ```
 
-You can test it using `ClientSuite` like:
+You can test it using `Http4sMUnitSyntax` like:
 
 ```scala
 import cats.effect._
 import org.http4s.client.Client
 
-class PingServiceSuite extends munit.ClientSuite {
+class PingServiceSuite extends munit.CatsEffectSuite with munit.Http4sMUnitSyntax {
 
-  val fixture = Client.fixture(client => Resource.pure(PingService.create(client)))
+  val fixture = Client.partialFixture(client => Resource.pure(PingService.create(client)))
 
   fixture {
     case GET -> Root / "ping" => Ok("pong")
@@ -175,25 +194,23 @@ class PingServiceSuite extends munit.ClientSuite {
 
 ### Testing a remote HTTP server
 
-In the case you don't want to use static http4s routes, but a running HTTP server, you have available the `HttpSuite`. This suite behaves exactly the same as the previous ones except that you don't provide a `routes` object, but a `baseUri` with the URI of your HTTP server. Any `Request` added in tests will prepend
-this URI before making a call using a real http4s `Client`. By default the library uses Ember as the client implementation (although you'll need to provide its dependency explicitly). If you want to use a different implementation just override `http4sMUnitClient`.
+In the case you don't want to use static http4s routes, but a running HTTP server,
+you just need to provide a real http4s' `Client` implementation under `http4sMUnitClient`.
+Every test request you write will be made using this client.
 
 ```scala
 import cats.effect.IO
-import cats.effect.Resource
+import cats.effect.SyncIO
 
 import io.circe.Json
-
-import org.http4s._
 import org.http4s.circe._
 import org.http4s.client.Client
-import org.http4s.blaze.client.BlazeClientBuilder
+import org.http4s.ember.client.EmberClientBuilder
 
-class GitHubSuite extends munit.HttpSuite {
+class GitHubSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO].resource
-
-  override val baseUri: Uri = uri"https://api.github.com"
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+    ResourceFunFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(uri"https://api.github.com")))
 
   test(GET(uri"users/gutiory")) { response =>
     assertEquals(response.status.code, 200)
@@ -206,25 +223,31 @@ class GitHubSuite extends munit.HttpSuite {
 }
 ```
 
+> If you are making requests to the same server, you can override `http4sMUnitClientFixture` like:
+>
+> ```scala
+> override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+>   ResourceFunFixture(EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(8080))))
+> ```
+
 ### Testing an HTTP server running inside a container
 
 Testing a Docker container with TestContainers and `http4s-munit` is easy. You
-just need to use `TestCotnainersFixtures` and use an `HttpSuite` to connect to
+just need to use `TestCotnainersFixtures` and use `Http4sSuite` to connect to
 it:
 
 ```scala
 import cats.effect.IO
+import cats.effect.SyncIO
 
 import com.dimafeng.testcontainers.GenericContainer
 import com.dimafeng.testcontainers.munit.fixtures.TestContainersFixtures
 import io.circe.Json
-import org.http4s._
+import org.http4s.client.Client
 import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 
-class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
-
-  override def http4sMUnitClient = EmberClientBuilder.default[IO].build
+class TestContainersSuite extends munit.Http4sSuite with TestContainersFixtures {
 
   // There is also available `ForEachContainerFixture`
   val container = ForAllContainerFixture {
@@ -233,7 +256,9 @@ class TestContainersSuite extends munit.HttpSuite with TestContainersFixtures {
 
   override def munitFixtures = List(container)
 
-  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container().mappedPort(80)}")
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture {
+    EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container().mappedPort(80))))
+  }
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200)
@@ -251,28 +276,72 @@ import cats.effect.Resource
 import cats.syntax.all._
 
 import com.dimafeng.testcontainers.GenericContainer
-import io.circe.Json
-import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 
-class TestContainersSuite extends munit.HttpSuite {
+class TestContainersSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient =
-    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+  lazy val container = GenericContainer(dockerImage = "nginxdemos/hello", exposedPorts = List(80))
 
-  lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
-
-  override def baseUri() = localhost.withPort(container.mappedPort(80))
+  override def http4sMUnitClientFixture = ResourceFunFixture {
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
+      EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
+  }
 
   test(GET(uri"ping")) { response =>
-    assertEquals(response.status.code, 200)
-    assertIOBoolean(response.as[Json].map(_.isObject))
+    assertEquals(response.status.code, 200, response.clues)
   }
 
 }
 ```
 
 ## Other features
+
+### Running an effect before running your test
+
+Sometimes (specially when you are testing against a real server) you need something to be
+run before running your test. On these cases, you can just create a
+`ResourceFunFixture[Client[IO]]` (in which you can add other effects) and run it with `test`.
+
+Essentially this is the same as just running `test` since it is just an alias for
+`http4sMUnitClientFixture.test`.
+
+```scala
+import cats.effect.IO
+import cats.effect.Resource
+import cats.syntax.all._
+
+import io.circe.Json
+import io.circe.syntax._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.circe._
+
+class MyBookstoreSuite extends munit.Http4sSuite {
+
+  def httpClient = EmberClientBuilder.default[IO].build
+
+  override def http4sMUnitClientFixture = ResourceFunFixture(httpClient)
+
+  ResourceFunFixture {
+    httpClient.flatTap { client =>
+      Resource.make {
+        val newBook = Json.obj("name":= "The Lord Of The Rings")
+
+        client
+          .expect[Json](POST(newBook, uri"http://localhost:8080/books"))
+          .flatMap(_.hcursor.get[Int]("id").liftTo[IO])
+      } { id =>
+        client.run(DELETE(uri"http://localhost:8080/books" / id)).use_
+      }.as(client)
+    }
+  }.test(GET(uri"http://localhost:8080/books?q=Rings")) { response =>
+    assertEquals(response.status.code, 200, response.clues)
+
+    val result = response.as[Json].map(_.hcursor.get[String]("name"))
+
+    assertIO(result, Right("The Lord Of The Rings"), response.clues)
+  }
+}
+```
 
 ### Tagging your tests
 
@@ -347,7 +416,7 @@ test(GET(uri"hello")).doNotRepeat { response =>
 
 ### Nested requests
 
-Sometimes (mostly while using the `HttpSuite` or `HttpFromContainerSuite`) one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
+Sometimes one test needs some pre-condition in order to be executed (e.g., in order to test the deletion of a user, you need to create it first). In such cases, once the request has been passed to the `test` method, we can call `andThen` to provide nested requests from the response of the previous one:
 
 ```scala
 test(GET(uri"posts" +? ("number" -> 10)))
@@ -361,9 +430,9 @@ test(GET(uri"posts" +? ("number" -> 10)))
 
 ### Test names
 
-The generated test names can be customized by overriding `http4sMUnitNameCreator`. Allows altering the name of the generated tests.
+The generated test names can be customized by overriding `http4sMUnitTestNameCreator`. It allows altering the name of the generated tests.
 
-By default this method generate test names like:
+Default implementation generates test names like:
 
 ```scala
 // GET -> users/42
@@ -392,9 +461,10 @@ import cats.effect.IO
 
 import org.http4s._
 
-class MySuite extends munit.Http4sHttpRoutesSuite {
+class MySuite extends munit.Http4sSuite {
 
-  val routes: HttpRoutes[IO] = HttpRoutes.pure(Response().withEntity("""{"id": 1, "name": "Jose"}"""))
+  override def http4sMUnitClientFixture = 
+    HttpRoutes.of[IO](_ => Ok("""{"id": 1, "name": "Jose"}""")).orFail.asFixture
 
   test(GET(uri"users"))(response => assertEquals(response.status.code, 204))
 
@@ -443,10 +513,12 @@ import org.http4s.circe._
 import org.http4s.ember.client.EmberClientBuilder
 import org.typelevel.ci._
 
-class TestContainersSuite extends munit.HttpSuite {
+class TestContainersSuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClient =
-    Resource.fromAutoCloseable(IO(container.start()).as(container)) >> EmberClientBuilder.default[IO].build
+  override def http4sMUnitClientFixture = ResourceFunFixture {
+    Resource.fromAutoCloseable(IO(container.start()).as(container)) >>
+      EmberClientBuilder.default[IO].build.map(_.withBaseUri(localhost.withPort(container.mappedPort(80))))
+  }
 
   override def http4sMUnitResponseClueCreator(response: Response[IO]) = {
     val logs = response.headers
@@ -459,8 +531,6 @@ class TestContainersSuite extends munit.HttpSuite {
   }
 
   lazy val container = GenericContainer(dockerImage = "mendhak/http-https-echo", exposedPorts = List(80))
-
-  override def baseUri() = Uri.unsafeFromString(s"http://localhost:${container.mappedPort(80)}")
 
   test(GET(uri"ping")) { response =>
     assertEquals(response.status.code, 200, response.clues)
