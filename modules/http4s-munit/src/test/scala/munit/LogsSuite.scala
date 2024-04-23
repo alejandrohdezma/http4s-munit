@@ -25,7 +25,7 @@ import cats.syntax.all._
 import sbt.testing.EventHandler
 import sbt.testing.TaskDef
 
-import org.http4s.HttpRoutes
+import org.http4s.HttpApp
 import org.http4s.Response
 
 /** This suite ensures that the logs outputed by this library are correct.
@@ -43,15 +43,15 @@ class LogsSuite extends FunSuite {
     val obtained = execute[LogsSuite.SimpleSuite]
 
     val expected =
-      s"""|==> Success GET -> posts
-          |==> Success GET -> posts/1
-          |==> Success GET -> posts/2 (get second post)
-          |==> Success GET -> posts/3 - executed 12 times with 5 in parallel
-          |==> Success GET -> posts/1 (get first post)
-          |==> Success GET -> posts/1 (get first post and then second post)
-          |==> Success GET -> posts/1 (get 1st post and 2nd secuentially)
-          |==> Success GET -> posts/1 (get first and second posts secuentially)
-          |""".stripMargin
+      """|==> Success GET -> posts
+         |==> Success GET -> posts/1
+         |==> Success GET -> posts/2 (get second post)
+         |==> Success GET -> posts/3 - executed 12 times with 5 in parallel
+         |==> Success GET -> posts/1 (get first post)
+         |==> Success GET -> posts/1 (get first post and then second post)
+         |==> Success GET -> posts/1 (get 1st post and 2nd secuentially)
+         |==> Success GET -> posts/1 (get first and second posts secuentially)
+         |""".stripMargin
 
     assertNoDiff(obtained, expected)
   }
@@ -85,7 +85,7 @@ class LogsSuite extends FunSuite {
           |      "name" : "Jose"
           |    }
           |  ''',
-          |  r.headers: Headers = Headers(Content-Length: 25, Content-Type: text/plain; charset=UTF-8)
+          |  r.headers: Headers = Headers(Content-Type: text/plain; charset=UTF-8, Content-Length: 25)
           |}
           |=> Obtained
           |200
@@ -131,9 +131,9 @@ class LogsSuite extends FunSuite {
 
 object LogsSuite {
 
-  class SimpleSuite extends Http4sHttpRoutesSuite {
+  class SimpleSuite extends Http4sSuite {
 
-    val routes: HttpRoutes[IO] = HttpRoutes.pure(Response())
+    override def http4sMUnitClientFixture = HttpApp.pure[IO](Response()).asFixture
 
     test(GET(uri"posts"))(_ => ())
 
@@ -158,9 +158,9 @@ object LogsSuite {
 
   }
 
-  class JsonSuite extends Http4sHttpRoutesSuite {
+  class JsonSuite extends Http4sSuite {
 
-    val routes: HttpRoutes[IO] = HttpRoutes.pure(Response().withEntity("""{"id": 1, "name": "Jose"}"""))
+    override def http4sMUnitClientFixture = HttpApp.liftF[IO](Ok("""{"id": 1, "name": "Jose"}""")).asFixture
 
     test(GET(uri"posts"))(r => assertEquals(r.status.code, 204))
 

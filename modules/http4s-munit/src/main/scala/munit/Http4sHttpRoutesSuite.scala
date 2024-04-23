@@ -1,5 +1,5 @@
 /*
- * Copyright 2020-2023 Alejandro Hernández <https://github.com/alejandrohdezma>
+ * Copyright 2020-2022 Alejandro Hernández <https://github.com/alejandrohdezma>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,10 @@
 package munit
 
 import cats.effect.IO
-import cats.effect.Resource
 import cats.effect.SyncIO
 
-import org.http4s.ContextRequest
 import org.http4s.HttpRoutes
-import org.http4s.Request
-import org.http4s.Response
+import org.http4s.client.Client
 
 /** Base class for suites testing `HttpRoutes`.
   *
@@ -53,7 +50,8 @@ import org.http4s.Response
   * @author
   *   José Gutiérrez
   */
-trait Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
+@deprecated("Use `Http4sSuite` overriding `http4sMUnitClientFixture` instead", since = "0.16.0")
+trait Http4sHttpRoutesSuite extends Http4sSuite {
 
   /** The HTTP routes being tested.
     *
@@ -65,31 +63,6 @@ trait Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
     */
   val routes: HttpRoutes[IO]
 
-  /** @inheritdoc */
-  override def http4sMUnitNameCreator(
-      request: Request[IO],
-      followingRequests: List[String],
-      testOptions: TestOptions,
-      config: Http4sMUnitConfig
-  ): String =
-    Http4sMUnitDefaults.http4sMUnitNameCreator(
-      ContextRequest((), request),
-      followingRequests,
-      testOptions,
-      config,
-      http4sMUnitNameCreatorReplacements()
-    )
-
-  implicit class Http4sMUnitTestCreatorOps(creator: Http4sMUnitTestCreator) {
-
-    /** Allows overriding the routes used when running this test. */
-    def withRoutes(newRoutes: HttpRoutes[IO]): Http4sMUnitTestCreator = creator.copy(
-      http4sMUnitFunFixture =
-        SyncIO.pure(FunFixture(_ => req => newRoutes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
-    )
-
-  }
-
   implicit class HttpRoutesCompanionOps(companion: HttpRoutes.type) {
 
     /** An HttpRoutes instance that always fails */
@@ -97,32 +70,7 @@ trait Http4sHttpRoutesSuite extends Http4sSuite[Request[IO]] {
 
   }
 
-  def http4sMUnitFunFixture: SyncIO[FunFixture[Request[IO] => Resource[IO, Response[IO]]]] =
-    SyncIO.pure(FunFixture(_ => req => routes.orNotFound.run(req).to[Resource[IO, *]], _ => ()))
-
-  /** Declares a test for the provided request. That request will be executed using the routes provided in `routes`.
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)) { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(POST(json, uri"users")).alias("Create a new user") { response =>
-    *     // test body
-    * }
-    *   }}}
-    *
-    * @example
-    *   {{{
-    * test(GET(uri"users" / 42)).flaky { response =>
-    *     // test body
-    * }
-    *   }}}
-    */
-  def test(request: Request[IO]): Http4sMUnitTestCreator = Http4sMUnitTestCreator(request, http4sMUnitFunFixture)
+  /** @inheritdoc */
+  override def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] = routes.orFail.asFixture
 
 }
