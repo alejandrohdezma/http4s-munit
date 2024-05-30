@@ -1,5 +1,5 @@
-ThisBuild / scalaVersion           := "2.13.13"
-ThisBuild / crossScalaVersions     := Seq("2.12.19", "2.13.13", "3.3.3")
+ThisBuild / scalaVersion           := "2.13.14"
+ThisBuild / crossScalaVersions     := Seq("2.12.19", "2.13.14", "3.3.3")
 ThisBuild / versionPolicyIntention := Compatibility.None
 
 ThisBuild / organization := "com.alejandrohdezma"
