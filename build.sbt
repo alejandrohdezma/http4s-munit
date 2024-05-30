@@ -1,5 +1,5 @@
-ThisBuild / scalaVersion           := "2.13.13"
-ThisBuild / crossScalaVersions     := Seq("2.12.19", "2.13.13", "3.3.3")
+ThisBuild / scalaVersion           := "2.13.14"
+ThisBuild / crossScalaVersions     := Seq("2.12.19", "2.13.14", "3.3.3")
 ThisBuild / versionPolicyIntention := Compatibility.None
 
 ThisBuild / organization := "com.alejandrohdezma"
@@ -15,16 +15,16 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(Test / fork := true)
-  .settings(libraryDependencies += "org.scalameta" %% "munit" % "1.0.0-RC1")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.26")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.26")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.26" % Optional)
-  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect" % "2.0.0-M5")
+  .settings(libraryDependencies += "org.scalameta" %% "munit" % "1.0.0")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.27")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.27")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.27" % Optional)
+  .settings(libraryDependencies += "org.typelevel" %% "munit-cats-effect" % "2.0.0")
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.7")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.6" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.26" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.27" % Test)
   .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.40.16" % Test)
-  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.26" % Test)
+  .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.27" % Test)
   .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
 
 def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.3").cross(CrossVersion.full)
