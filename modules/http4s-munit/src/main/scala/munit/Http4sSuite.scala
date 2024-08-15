@@ -82,11 +82,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
       testOptions: TestOptions,
       config: Http4sMUnitConfig
   ): String = Http4sMUnitDefaults.http4sMUnitNameCreator(
-    request,
-    followingRequests,
-    testOptions,
-    config,
-    http4sMUnitNameCreatorReplacements()
+    request, followingRequests, testOptions, config, http4sMUnitNameCreatorReplacements()
   )
 
   /** List of replacements that will be applied to the result of `http4sMUnitNameCreator` using `String#replaceAll` */
