@@ -105,7 +105,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  case class ContextNotFound(request: Request[IO])
+  case class ContextNotFound(request: Request[IO]) // scalafix:ok
       extends RuntimeException(s"Auth context not found on request $request, remember to add one with `.context()`")
       with NoStackTrace
 
