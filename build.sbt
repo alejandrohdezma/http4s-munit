@@ -11,7 +11,7 @@ addCommandAlias("ci-publish", "versionCheck; github; ci-release")
 lazy val documentation = project
   .enablePlugins(MdocPlugin)
   .dependsOn(`http4s-munit` % "compile->test")
-  .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.16")
+  .settings(libraryDependencies += "org.http4s" %% "http4s-blaze-client" % "0.23.17")
 
 lazy val `http4s-munit` = module
   .settings(Test / fork := true)
