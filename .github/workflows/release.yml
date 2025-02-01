@@ -37,11 +37,14 @@ jobs:
         if: github.event_name == 'push'
         uses: alejandrohdezma/actions/check-semver-tag@v1
 
-      - uses: actions/setup-java@8df1039502a15bceb9433410b1a100fbe190c53b # v4.5.0
+      - name: Run Coursier Cache Action
+        uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
+
+      - name: Run Coursier Setup Action
+        uses: coursier/setup-action@62c1c28a0e03df3de0680172df8b829bd80d07a0 # v1.3.7
         with:
-          distribution: "liberica"
-          java-version: "11"
-          cache: "sbt"
+          jvm: liberica:17
+          apps: sbt
 
       - name: Run `sbt ci-publish`
         run: sbt ci-publish
@@ -65,11 +68,14 @@ jobs:
           ref: main
           token: ${{ secrets.ADMIN_GITHUB_TOKEN }}
 
-      - uses: actions/setup-java@8df1039502a15bceb9433410b1a100fbe190c53b # v4.5.0
+      - name: Run Coursier Cache Action
+        uses: coursier/cache-action@142d2738bd29f0eb9d44610828acb3a19809feab # v6.4.6
+
+      - name: Run Coursier Setup Action
+        uses: coursier/setup-action@62c1c28a0e03df3de0680172df8b829bd80d07a0 # v1.3.7
         with:
-          distribution: "liberica"
-          java-version: "17"
-          cache: "sbt"
+          jvm: liberica:17
+          apps: sbt
 
       - name: Run `sbt ci-docs`
         run: sbt ci-docs
@@ -91,5 +97,3 @@ jobs:
         with:
           message: Reset `versionPolicyIntention` [skip ci]
           branch: main
-      
-  
