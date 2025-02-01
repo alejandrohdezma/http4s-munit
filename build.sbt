@@ -1,5 +1,5 @@
-ThisBuild / scalaVersion           := "2.13.15"
-ThisBuild / crossScalaVersions     := Seq("2.12.20", "2.13.15", "3.3.4")
+ThisBuild / scalaVersion           := "2.13.16"
+ThisBuild / crossScalaVersions     := Seq("2.12.20", "2.13.16", "3.3.5")
 ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
 
 ThisBuild / organization := "com.alejandrohdezma"
@@ -15,7 +15,7 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(Test / fork := true)
-  .settings(libraryDependencies += "org.scalameta" %% "munit" % "1.0.3")
+  .settings(libraryDependencies += "org.scalameta" %% "munit" % "1.0.4")
   .settings(libraryDependencies += "org.http4s" %% "http4s-client" % "0.23.30")
   .settings(libraryDependencies += "org.http4s" %% "http4s-dsl" % "0.23.30")
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.30" % Optional)
@@ -23,7 +23,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.10")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.16" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.30" % Test)
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.41.5" % Test)
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.41.8" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.30" % Test)
   .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
 
