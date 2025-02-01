@@ -23,7 +23,7 @@ lazy val `http4s-munit` = module
   .settings(libraryDependencies += "io.circe" %% "circe-parser" % "0.14.10")
   .settings(libraryDependencies += "ch.qos.logback" % "logback-classic" % "1.5.16" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-circe" % "0.23.30" % Test)
-  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.41.5" % Test)
+  .settings(libraryDependencies += "com.dimafeng" %% "testcontainers-scala-munit" % "0.41.8" % Test)
   .settings(libraryDependencies += "org.http4s" %% "http4s-ember-client" % "0.23.30" % Test)
   .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
 
