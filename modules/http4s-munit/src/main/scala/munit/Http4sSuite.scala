@@ -227,7 +227,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     def test(request: Request[IO]): Http4sMUnitTestCreator =
       Http4sMUnitTestCreator(
         request = request,
-        executor = fixture.test,
+        executor = SyncIOFunFixtureOps(fixture).test,
         nameCreator = http4sMUnitTestNameCreator,
         bodyPrettifier = http4sMUnitBodyPrettifier
       )

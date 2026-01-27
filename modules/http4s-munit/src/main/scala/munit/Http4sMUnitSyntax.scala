@@ -140,7 +140,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
   implicit class Http4sMUnitClientOps(client: Client[IO]) {
 
     /** Prepends the provided `Uri` to every request made by this client. */
-    def withBaseUri(uri: Uri): Client[IO] = client.withUpdatedUri(uri.resolve)
+    def withBaseUri(uri: Uri): Client[IO] = withUpdatedUri(uri.resolve)
 
     /** Applies a method that updates the requests's `Uri` on every request. */
     def withUpdatedUri(f: Uri => Uri): Client[IO] = Client(request => client.run(request.withUri(f(request.uri))))
