@@ -83,11 +83,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
       config: Http4sMUnitConfig
   ): String =
     Http4sMUnitDefaults.http4sMUnitNameCreator(
-      request,
-      followingRequests,
-      testOptions,
-      config,
-      http4sMUnitNameCreatorReplacements()
+      request, followingRequests, testOptions, config, http4sMUnitNameCreatorReplacements()
     )
 
   /** List of replacements that will be applied to the result of `http4sMUnitNameCreator` using `String#replaceAll` */
@@ -231,7 +227,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     def test(request: Request[IO]): Http4sMUnitTestCreator =
       Http4sMUnitTestCreator(
         request = request,
-        executor = fixture.test,
+        executor = SyncIOFunFixtureOps(fixture).test,
         nameCreator = http4sMUnitTestNameCreator,
         bodyPrettifier = http4sMUnitBodyPrettifier
       )
