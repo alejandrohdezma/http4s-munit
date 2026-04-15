@@ -121,8 +121,8 @@ final case class Http4sMUnitTestCreator(
           }
           .use { response =>
             IO(body(response)).attempt.flatMap {
-              case Right(io: IO[Any]) => io
-              case Right(a)           => IO.pure(a)
+              case Right(io: IO[Any])                                                    => io
+              case Right(a)                                                              => IO.pure(a)
               case Left(t: FailExceptionLike[_]) if t.getMessage().contains("Clues {\n") =>
                 response.bodyText.compile.string.map(bodyPrettifier(_)) >>= { body =>
                   t.getMessage().split("Clues \\{") match {
@@ -149,7 +149,7 @@ final case class Http4sMUnitTestCreator(
       .flatMap {
         case Nil                                      => IO.unit
         case List(throwables) if numRepetitions === 1 => IO.raiseError(throwables)
-        case throwables if showAllStackTraces =>
+        case throwables if showAllStackTraces         =>
           IO.raiseError(
             new FailException(
               s"${throwables.size} / $numRepetitions  tests failed while execution this parallel test\n${throwables
