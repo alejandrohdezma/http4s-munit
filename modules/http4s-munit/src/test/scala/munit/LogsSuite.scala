@@ -65,9 +65,9 @@ class LogsSuite extends FunSuite {
           |values are not the same
           |=> Obtained
           |200
-          |=> Diff (- obtained, + expected)
-          |-200
-          |+204
+          |=> Diff (- expected, + obtained)
+          |-204
+          |+200
           |
           |Response body was:
           |
@@ -89,9 +89,9 @@ class LogsSuite extends FunSuite {
           |}
           |=> Obtained
           |200
-          |=> Diff (- obtained, + expected)
-          |-200
-          |+204
+          |=> Diff (- expected, + obtained)
+          |-204
+          |+200
           |""".stripMargin
 
     assertNoDiff(obtained, expected)
