@@ -26,7 +26,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "1.1.0" % Test
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "2.0.0" % Test
 ```
 
 ## Contributors to this project
@@ -463,8 +463,8 @@ import org.http4s._
 
 class MySuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClientFixture = 
-    HttpRoutes.of[IO](_ => Ok("""{"id": 1, "name": "Jose"}""")).orFail.asFixture
+  override def http4sMUnitClientFixture =
+    HttpRoutes.of[IO] { case _ => Ok("""{"id": 1, "name": "Jose"}""") }.orFail.asFixture
 
   test(GET(uri"users"))(response => assertEquals(response.status.code, 204))
 
