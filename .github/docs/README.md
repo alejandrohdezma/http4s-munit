@@ -463,8 +463,8 @@ import org.http4s._
 
 class MySuite extends munit.Http4sSuite {
 
-  override def http4sMUnitClientFixture = 
-    HttpRoutes.of[IO](_ => Ok("""{"id": 1, "name": "Jose"}""")).orFail.asFixture
+  override def http4sMUnitClientFixture =
+    HttpRoutes.of[IO] { case _ => Ok("""{"id": 1, "name": "Jose"}""") }.orFail.asFixture
 
   test(GET(uri"users"))(response => assertEquals(response.status.code, 204))
 
