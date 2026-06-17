@@ -12,6 +12,3 @@ lazy val documentation = project
 
 lazy val `http4s-munit` = module
   .settings(Test / fork := true)
-  .settings(libraryDependencies ++= scalaVersion.value.on(2)(kindProjector))
-
-def kindProjector = compilerPlugin("org.typelevel" % "kind-projector" % "0.13.4").cross(CrossVersion.full)
