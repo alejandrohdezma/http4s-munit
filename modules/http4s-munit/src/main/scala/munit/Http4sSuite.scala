@@ -158,7 +158,28 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
       */
     def test(request: Request[IO]): Http4sMUnitTestCreator =
       Http4sMUnitTestCreator(
-        request = request,
+        request = Right(request),
+        executor = SyncIOFunFixtureOps(fixture).test,
+        nameCreator = http4sMUnitTestNameCreator,
+        bodyPrettifier = http4sMUnitBodyPrettifier
+      )
+
+    /** Declares a test for a request that is built effectfully when the test runs.
+      *
+      * Use this overload when building the request has side effects that must run at test-execution time (for example,
+      * when it depends on a fixture). Since the request is not available while naming the test, providing an alias is
+      * mandatory.
+      *
+      * @example
+      *   {{{
+      * test(IO(GET(uri"users" / 42))).alias("Get the user") { response =>
+      *     // test body
+      * }
+      *   }}}
+      */
+    def test(request: IO[Request[IO]]): Http4sMUnitTestCreator =
+      Http4sMUnitTestCreator(
+        request = Left(request),
         executor = SyncIOFunFixtureOps(fixture).test,
         nameCreator = http4sMUnitTestNameCreator,
         bodyPrettifier = http4sMUnitBodyPrettifier
@@ -191,7 +212,28 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     */
   def test(request: Request[IO]): Http4sMUnitTestCreator =
     Http4sMUnitTestCreator(
-      request = request,
+      request = Right(request),
+      executor = http4sMUnitClientFixture.test,
+      nameCreator = http4sMUnitTestNameCreator,
+      bodyPrettifier = http4sMUnitBodyPrettifier
+    )
+
+  /** Declares a test for a request that is built effectfully when the test runs.
+    *
+    * Use this overload when building the request has side effects that must run at test-execution time (for example,
+    * when it depends on a fixture). Since the request is not available while naming the test, providing an alias is
+    * mandatory.
+    *
+    * @example
+    *   {{{
+    * test(IO(GET(uri"users" / 42))).alias("Get the user") { response =>
+    *     // test body
+    * }
+    *   }}}
+    */
+  def test(request: IO[Request[IO]]): Http4sMUnitTestCreator =
+    Http4sMUnitTestCreator(
+      request = Left(request),
       executor = http4sMUnitClientFixture.test,
       nameCreator = http4sMUnitTestNameCreator,
       bodyPrettifier = http4sMUnitBodyPrettifier

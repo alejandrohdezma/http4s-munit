@@ -50,4 +50,8 @@ class Http4sHttpRoutesSuiteSuite extends Http4sSuite {
       assertIO(response.as[String], "Hey Jose")
     }
 
+  test(IO(GET(uri"/hello" / "Jose"))).alias("Deferred request") { response =>
+    assertIO(response.as[String], "Hi Jose")
+  }
+
 }

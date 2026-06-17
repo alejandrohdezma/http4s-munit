@@ -325,6 +325,32 @@ class MyBookstoreSuite extends munit.Http4sSuite {
 }
 ```
 
+### Building the request effectfully
+
+Sometimes the request can only be built by running an effect — for example, when it depends on a value produced by a fixture, or on some setup that must run when the test starts (not when the suite is defined). For these cases `test` also accepts an `IO[Request[IO]]`:
+
+```scala mdoc:reset:silent
+import cats.effect.IO
+
+import org.http4s._
+
+class MyDeferredRequestSuite extends munit.Http4sSuite {
+
+  override def http4sMUnitClientFixture = HttpRoutes.of[IO] {
+    case GET -> Root / "hello" / name => Ok(s"Hi $name")
+  }.orFail.asFixture
+
+  def loadUser: IO[String] = IO.pure("Jose")
+
+  test(loadUser.map(user => GET(uri"hello" / user))).alias("Say hello to the loaded user") { response =>
+    assertIO(response.as[String], "Hi Jose")
+  }
+
+}
+```
+
+Since the request is not available while naming the test, providing an alias is mandatory; `http4s-munit` will fail with a clear message if you forget it.
+
 ### Tagging your tests
 
 Once the request has been passed to the `test` method, we can tag our tests before implementing them:
@@ -448,6 +474,9 @@ test(GET(uri"users")).repeat(10).parallel(2)
 test(GET(uri"posts" +? ("number" -> 10)))
     .alias("look for the 10th post")
     .andThen("delete it")(_.as[String].map { id => DELETE(uri"posts" / id) })
+
+// say hello (a deferred request is named after its alias)
+test(IO(GET(uri"hello"))).alias("say hello")
 ```
 
 ### Body in failed assertions
