@@ -51,6 +51,7 @@ class LogsSuite extends FunSuite {
          |==> Success GET -> posts/1 (get first post and then second post)
          |==> Success GET -> posts/1 (get 1st post and 2nd secuentially)
          |==> Success GET -> posts/1 (get first and second posts secuentially)
+         |==> Success deferred request
          |""".stripMargin
 
     assertNoDiff(obtained, expected)
@@ -155,6 +156,8 @@ object LogsSuite {
 
     test(GET(uri"posts" / "1"))
       .andThen("get first and second posts secuentially")(_ => GET(uri"posts" / "2").pure[IO])(_ => ())
+
+    test(IO(GET(uri"posts" / "1"))).alias("deferred request")(_ => ())
 
   }
 

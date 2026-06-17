@@ -60,7 +60,7 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
   }
 
   override def http4sMUnitTestNameCreator = super.http4sMUnitTestNameCreator.andThen { (previous, request, _, _, _) =>
-    s"$previous as ${request.getContext[String]}"
+    request.fold(previous)(request => s"$previous as ${request.getContext[String]}")
   }
 
 }

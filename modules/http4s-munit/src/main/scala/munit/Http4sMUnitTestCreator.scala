@@ -42,7 +42,7 @@ import org.http4s.client.Client
   *   the configuration with which to run the test
   */
 final case class Http4sMUnitTestCreator(
-    request: Request[IO],
+    request: Either[IO[Request[IO]], Request[IO]],
     executor: TestOptions => (Client[IO] => IO[Unit]) => Unit,
     nameCreator: Http4sMUnitTestNameCreator = Http4sMUnitTestNameCreator.default,
     bodyPrettifier: String => String = identity,
@@ -104,15 +104,17 @@ final case class Http4sMUnitTestCreator(
 
   def apply(body: Response[IO] => Any)(implicit loc: Location): Unit = executor {
     val options = testOptions.withLocation(loc)
-    options.withName(nameCreator.nameFor(request, followingRequests.map(_._1), options, config))
+
+    options.withName(nameCreator.nameFor(request.toOption, followingRequests.map(_._1), options, config))
   } { (client: Client[IO]) =>
     val numRepetitions     = config.repetitions.getOrElse(1)
     val showAllStackTraces = config.showAllStackTraces.getOrElse(false)
+    val initialRequest     = request.map(IO.pure).merge.toResource
     Stream
       .range[IO, Int](1, numRepetitions + 1)
       .parEvalMapUnordered(config.maxParallel.getOrElse(1)) { _ =>
         followingRequests
-          .foldLeft(client.run(request)) { (previousRequest, nextRequest) =>
+          .foldLeft(initialRequest.flatMap(client.run)) { (previousRequest, nextRequest) =>
             for {
               previousResponse <- previousRequest
               request          <- nextRequest._2(previousResponse).toResource
