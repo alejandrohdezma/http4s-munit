@@ -16,7 +16,10 @@
 
 package munit
 
+import scala.annotation.nowarn
+
 import cats.effect.IO
+import cats.effect.Resource
 import cats.effect.SyncIO
 import cats.syntax.all._
 
@@ -75,8 +78,52 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
   def http4sMUnitResponseClueCreator(response: Response[IO]): Clues =
     clues(response.headers.show, response.status.show)
 
+  /** Resource that creates the client used to execute this suite's requests.
+    *
+    * It backs [[http4sMUnitClientTestFixture]] (by default a fresh client per test) and is available ambiently inside
+    * any test body through [[http4sMUnitClient]]. Both the request run by the `test(...)` DSL and any manual
+    * `client.run(...)` in the body share that same instance.
+    */
+  @nowarn("cat=deprecation")
+  def http4sMUnitClientResource: Resource[IO, Client[IO]] =
+    http4sMUnitClientFixture.to[IO].toResource.flatMap { fixture =>
+      Resource.make(IO.fromFuture(IO.blocking(fixture.setup(TestOptions("")))))(c =>
+        IO.fromFuture(IO.blocking(fixture.teardown(c)))
+      )
+    }
+
+  /** The fixture that provides the client to the `test(...)` DSL and to [[http4sMUnitClient]].
+    *
+    * Defaults to a `ResourceTestLocalFixture` (a fresh client per test). Override it (as an `override lazy val`) to
+    * change that, for example with a `ResourceSuiteLocalFixture` to create the client once and share it across the
+    * whole suite:
+    *
+    * {{{
+    * override lazy val http4sMUnitClientTestFixture =
+    *   ResourceSuiteLocalFixture("http4sMUnitClient", http4sMUnitClientResource)
+    * }}}
+    */
+  lazy val http4sMUnitClientTestFixture: AnyFixture[Client[IO]] = // scalafix:ok DisableSyntax.valInAbstract
+    ResourceTestLocalFixture("http4sMUnitClient", http4sMUnitClientResource)
+
+  /** The client used to run the current test's request.
+    *
+    * It is the same instance the `test(...)` DSL uses, so stateful middleware (a `CookieJar`, a connection pool, ...)
+    * is shared between the auto-run request and any manual `client.run(...)` in the body. Only valid inside a test
+    * body.
+    */
+  def http4sMUnitClient: Client[IO] = http4sMUnitClientTestFixture()
+
   /** Fixture that creates the client which will be used to execute this suite's requests. */
-  def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]]
+  @deprecated("Override `http4sMUnitClientResource` instead", "3.0.0")
+  def http4sMUnitClientFixture: SyncIO[FunFixture[Client[IO]]] =
+    ResourceFunFixture(
+      Resource.eval(
+        IO.raiseError(new NotImplementedError("Override `http4sMUnitClientResource` to provide the client"))
+      )
+    )
+
+  override def munitFixtures: Seq[AnyFixture[_]] = super.munitFixtures :+ http4sMUnitClientTestFixture
 
   implicit class ResponseCluesOps(private val response: Response[IO]) {
 
@@ -119,8 +166,8 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
 
     /** Allows overriding the app used when running this test.
       *
-      * When this method is called, the test ignores the fixture on `http4sMUnitClientFixture` and runs the request
-      * against the provided app.
+      * When this method is called, the request is run against the provided app instead of the client from
+      * [[http4sMUnitClientResource]]. Note that `http4sMUnitClient` still returns the latter, not this app.
       */
     def withHttpApp[A](httpApp: HttpApp[IO]): Http4sMUnitTestCreator = {
       val client = Client[IO](httpApp.run(_).toResource)
@@ -130,6 +177,8 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
 
   }
 
+  /** Declares a test for the provided request against the client built by the provided fixture. */
+  @deprecated("Override `http4sMUnitClientResource` and use the suite's `test` methods instead", "3.0.0")
   implicit final class ClientFunFixtureTestOps(fixture: SyncIO[FunFixture[Client[IO]]])
       extends SyncIOFunFixtureOps(fixture) {
 
@@ -213,7 +262,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
   def test(request: Request[IO]): Http4sMUnitTestCreator =
     Http4sMUnitTestCreator(
       request = Right(request),
-      executor = http4sMUnitClientFixture.test,
+      executor = options => body => test(options)(body(http4sMUnitClient)),
       nameCreator = http4sMUnitTestNameCreator,
       bodyPrettifier = http4sMUnitBodyPrettifier
     )
@@ -234,7 +283,7 @@ trait Http4sSuite extends CatsEffectSuite with Http4sMUnitSyntax {
   def test(request: IO[Request[IO]]): Http4sMUnitTestCreator =
     Http4sMUnitTestCreator(
       request = Left(request),
-      executor = http4sMUnitClientFixture.test,
+      executor = options => body => test(options)(body(http4sMUnitClient)),
       nameCreator = http4sMUnitTestNameCreator,
       bodyPrettifier = http4sMUnitBodyPrettifier
     )

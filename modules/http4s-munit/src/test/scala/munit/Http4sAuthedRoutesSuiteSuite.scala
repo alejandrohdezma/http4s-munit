@@ -26,12 +26,12 @@ class Http4sAuthedRoutesSuiteSuite extends Http4sSuite {
 
   implicit val key: Key[String] = Key.newKey[IO, String].unsafeRunSync()
 
-  override def http4sMUnitClientFixture = AuthedRequest.fromContext.andThen {
+  override def http4sMUnitClientResource = AuthedRequest.fromContext.andThen {
     AuthedRoutes.of[String, IO] {
       case GET -> Root / "hello" as user        => Ok(s"$user: Hi")
       case GET -> Root / "hello" / name as user => Ok(s"$user: Hi $name")
     }
-  }.orFail.asFixture
+  }.orFail.asClient
 
   test(GET(uri"/hello").context("jose")).alias("Test 1") { response =>
     assertIO(response.as[String], "jose: Hi")
