@@ -17,6 +17,7 @@
 package munit
 
 import cats.effect.IO
+import cats.effect.Resource
 import cats.syntax.all._
 
 import org.http4s.HttpRoutes
@@ -25,7 +26,7 @@ import org.http4s.client.Client
 
 class RealWorldTest extends Http4sSuite {
 
-  override def http4sMUnitClientFixture = Client.fail.asFixture
+  override def http4sMUnitClientResource = Client.fail.pure[Resource[IO, *]]
 
   trait Database {
 

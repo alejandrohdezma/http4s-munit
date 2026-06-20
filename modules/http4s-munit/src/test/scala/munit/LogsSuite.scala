@@ -134,7 +134,7 @@ object LogsSuite {
 
   class SimpleSuite extends Http4sSuite {
 
-    override def http4sMUnitClientFixture = HttpApp.pure[IO](Response()).asFixture
+    override def http4sMUnitClientResource = HttpApp.pure[IO](Response()).asClient
 
     test(GET(uri"posts"))(_ => ())
 
@@ -163,7 +163,7 @@ object LogsSuite {
 
   class JsonSuite extends Http4sSuite {
 
-    override def http4sMUnitClientFixture = HttpApp.liftF[IO](Ok("""{"id": 1, "name": "Jose"}""")).asFixture
+    override def http4sMUnitClientResource = HttpApp.liftF[IO](Ok("""{"id": 1, "name": "Jose"}""")).asClient
 
     test(GET(uri"posts"))(r => assertEquals(r.status.code, 204))
 

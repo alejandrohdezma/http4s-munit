@@ -62,7 +62,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
       *
       * @example
       *   {{{
-      * val fixture = Client.fixture(PingService.create[F](_))
+      * val fixture = Client.partialFixture(client => Resource.pure(PingService.create(client)))
       *
       * fixture {
       *     case GET -> Root / "ping" => Ok("pong")
@@ -96,7 +96,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
       *   {{{
       *   val myAuthedRoutes: AuthedRoutes[IO, A] = ???
       *
-      *   AuthedRequest.fromContext[A].andThen(myAuthedRoutes).orFail.asFixture
+      *   AuthedRequest.fromContext[A].andThen(myAuthedRoutes).orFail.asClient
       *   }}}
       */
     def fromContext[A: Key]: Kleisli[OptionT[IO, *], Request[IO], AuthedRequest[IO, A]] =
@@ -129,11 +129,15 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  implicit final class Http4sMUnitHttpAppOps[A](httpApp: HttpApp[IO]) {
+  implicit final class Http4sMUnitHttpAppOps(httpApp: HttpApp[IO]) {
+
+    /** Transforms this app into an http4s `Client` resource. */
+    def asClient: Resource[IO, Client[IO]] =
+      Client.fromHttpApp(httpApp).pure[Resource[IO, *]]
 
     /** Transforms the provided app into an http4s' `Client` fixture. */
-    def asFixture: SyncIO[FunFixture[Client[IO]]] =
-      ResourceFunFixture(Client.fromHttpApp(httpApp).pure[Resource[IO, *]])
+    @deprecated("Use `asClient` together with `http4sMUnitClientResource`", "3.0.0")
+    def asFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture(asClient)
 
   }
 
@@ -146,6 +150,7 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
     def withUpdatedUri(f: Uri => Uri): Client[IO] = Client(request => client.run(request.withUri(f(request.uri))))
 
     /** Transforms the provided client into a `FunFixture`. */
+    @deprecated("Override `http4sMUnitClientResource` instead", "3.0.0")
     def asFixture: SyncIO[FunFixture[Client[IO]]] = ResourceFunFixture(client.pure[Resource[IO, *]])
 
   }

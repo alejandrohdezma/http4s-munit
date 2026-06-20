@@ -22,13 +22,13 @@ import org.http4s.HttpRoutes
 
 class Http4sHttpRoutesSuiteSuite extends Http4sSuite {
 
-  override def http4sMUnitClientFixture = HttpRoutes
+  override def http4sMUnitClientResource = HttpRoutes
     .of[IO] {
       case GET -> Root / "hello"        => Ok("Hi")
       case GET -> Root / "hello" / name => Ok(s"Hi $name")
     }
     .orFail
-    .asFixture
+    .asClient
 
   test(GET(uri"/hello")).alias("Test 1") { response =>
     assertIO(response.as[String], "Hi")
