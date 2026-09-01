@@ -1,1 +1,1 @@
-addSbtPlugin("com.alejandrohdezma" % "sbt-dependencies" % "0.32.1")
+addSbtPlugin("com.alejandrohdezma" % "sbt-dependencies" % "0.39.0")
