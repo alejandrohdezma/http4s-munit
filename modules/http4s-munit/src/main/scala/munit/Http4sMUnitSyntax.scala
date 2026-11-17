@@ -25,6 +25,7 @@ import cats.effect.Resource
 import cats.effect.SyncIO
 import cats.syntax.all._
 
+import io.circe.Json
 import org.http4s.AuthedRequest
 import org.http4s.Header
 import org.http4s.HttpApp
@@ -75,6 +76,42 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
         f: Client[IO] => Resource[IO, A]
     ): PartialFunction[Request[IO], IO[Response[IO]]] => SyncIO[FunFixture[A]] =
       pf => ResourceFunFixture(f(from(pf)))
+
+  }
+
+  /** Asserts that the obtained JSON equals `expected`, where a string in `expected` that is the marker of one of the
+    * `placeholders` in scope stands for any value that placeholder accepts.
+    *
+    * On failure the diff shows the obtained document with every value that satisfied its placeholder replaced by the
+    * marker, so the values that did not match are shown as they were received.
+    *
+    * {{{
+    * val expected = json"""{ "id": "<uuid>", "name": "Jose", "created_at": "<recent timestamp>" }"""
+    *
+    * assertIOJson(response.as[Json], expected)
+    * }}}
+    */
+  def assertIOJson(obtained: IO[Json], expected: Json)(implicit placeholders: Placeholders, loc: Location): IO[Unit] =
+    assertIO(obtained.map(_.withPlaceholders(expected)), expected)
+
+  implicit final class Http4sMUnitJsonOps(json: Json) {
+
+    /** `json` with every value that satisfies the placeholder at the same position in `expected` replaced by that
+      * placeholder's marker.
+      */
+    def withPlaceholders(expected: Json)(implicit placeholders: Placeholders): Json =
+      if (placeholders.find(expected).exists(_.matches(json)))
+        expected
+      else if (json.isObject && expected.isObject)
+        Json.fromFields(json.asObject.get.toList.map { case (key, value) =>
+          key -> expected.asObject.get(key).fold(value)(value.withPlaceholders)
+        })
+      else if (json.isArray && expected.isArray)
+        Json.fromValues {
+          json.asArray.get.zip(expected.asArray.get).map { case (value, expected) => value.withPlaceholders(expected) }
+        }
+      else
+        json
 
   }
 

@@ -1,4 +1,4 @@
-ThisBuild / versionPolicyIntention := Compatibility.BinaryAndSourceCompatible
+ThisBuild / versionPolicyIntention := Compatibility.BinaryCompatible
 
 ThisBuild / organization := "com.alejandrohdezma"
 
