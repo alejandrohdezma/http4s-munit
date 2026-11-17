@@ -632,15 +632,4 @@ class UsersSuite extends munit.Http4sSuite {
 }
 ```
 
-On failure the diff shows the obtained document with every value that satisfied its placeholder replaced by the marker, so only the values that did not match are shown as they were received. A field missing from the expected document, or present in it but missing from the obtained one, fails like any other difference.
-
-Two placeholders come by default, `<uuid>` for any UUID and `<recent timestamp>` for any instant within the last ten seconds. Add your own by putting a `Placeholders` value in scope:
-
-```scala mdoc:compile-only
-import munit.Placeholders
-
-implicit val placeholders: Placeholders =
-  Placeholders.default + ("<positive>", _.as[Int].exists(_ > 0))
-```
-
-A placeholder can also be used with `:=` when building the expected document, through its `json` value: `"id" := Placeholder.uuid.json`.
+Placeholders come from [circe-munit](https://github.com/alejandrohdezma/circe-munit), whose `CirceMUnitSyntax` is part of every `Http4sSuite`: `assertEquals` on two `Json` values honors them too, `json[A]("a", "b")` reads a value by path, and `Placeholders.default + (marker, predicate)` adds your own. See its README for the default placeholders and the details.
