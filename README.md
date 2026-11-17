@@ -1,4 +1,4 @@
-# When http4s met MUnit
+# documentation
 
 Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](https://github.com/http4s/http4s/).
 
@@ -22,6 +22,7 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
   - [Test names](#test-names)
   - [Body in failed assertions](#body-in-failed-assertions)
   - [Response clues](#response-clues)
+  - [Asserting JSON bodies with placeholders](#asserting-json-bodies-with-placeholders)
 
 ## Installation
 
@@ -33,9 +34,7 @@ libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "3.0.0" % Test
 
 ## Contributors to this project
 
-| <a href="https://github.com/alejandrohdezma"><img alt="alejandrohdezma" src="https://avatars.githubusercontent.com/u/9027541?v=4&s=120" width="120px" /></a> | <a href="https://github.com/gutiory"><img alt="gutiory" src="https://avatars.githubusercontent.com/u/3316502?v=4&s=120" width="120px" /></a> | <a href="https://github.com/JackTreble"><img alt="JackTreble" src="https://avatars.githubusercontent.com/u/4872989?v=4&s=120" width="120px" /></a> |
-| :--: | :--: | :--: |
-| <a href="https://github.com/alejandrohdezma"><sub><b>alejandrohdezma</b></sub></a> | <a href="https://github.com/gutiory"><sub><b>gutiory</b></sub></a> | <a href="https://github.com/JackTreble"><sub><b>JackTreble</b></sub></a> |
+No contributors found
 
 ## Usage
 
@@ -606,3 +605,43 @@ class TestContainersSuite extends munit.Http4sSuite {
 
 }
 ```
+### Asserting JSON bodies with placeholders
+
+`assertIOJson` compares an obtained JSON document with an expected one, where some values are not known in advance: an id the server generated, a timestamp of the request. Those are written as placeholders, strings that stand for any value they accept:
+
+```scala
+import cats.effect.IO
+
+import io.circe.Json
+import io.circe.literal._
+import org.http4s.HttpRoutes
+import org.http4s.circe._
+
+class UsersSuite extends munit.Http4sSuite {
+
+  override def http4sMUnitClientResource = HttpRoutes.of[IO] { case POST -> Root / "users" =>
+    Created(json"""{ "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8", "name": "Jose", "created_at": "2026-01-01T00:00:00Z" }""")
+  }.orFail.asClient
+
+  test(POST(json"""{ "name": "Jose" }""", uri"users")) { response =>
+    assertIOJson(
+      response.as[Json],
+      json"""{ "id": "<uuid>", "name": "Jose", "created_at": "<recent timestamp>" }"""
+    )
+  }
+
+}
+```
+
+On failure the diff shows the obtained document with every value that satisfied its placeholder replaced by the marker, so only the values that did not match are shown as they were received. A field missing from the expected document, or present in it but missing from the obtained one, fails like any other difference.
+
+Two placeholders come by default, `<uuid>` for any UUID and `<recent timestamp>` for any instant within the last ten seconds. Add your own by putting a `Placeholders` value in scope:
+
+```scala
+import munit.Placeholders
+
+implicit val placeholders: Placeholders =
+  Placeholders.default + ("<positive>", _.as[Int].exists(_ > 0))
+```
+
+A placeholder can also be used with `:=` when building the expected document, through its `json` value: `"id" := Placeholder.uuid.json`.
