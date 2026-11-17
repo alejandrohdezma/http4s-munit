@@ -1,4 +1,4 @@
-# documentation
+# When http4s met MUnit
 
 Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](https://github.com/http4s/http4s/).
 
@@ -29,12 +29,14 @@ Integration library between [MUnit](https://scalameta.org/munit/) and [http4s](h
 Add the following line to your `build.sbt` file:
 
 ```sbt
-libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "3.0.0" % Test
+libraryDependencies += "com.alejandrohdezma" %% "http4s-munit" % "3.1.0" % Test
 ```
 
 ## Contributors to this project
 
-No contributors found
+| <a href="https://github.com/alejandrohdezma"><img alt="alejandrohdezma" src="https://avatars.githubusercontent.com/u/9027541?v=4&s=120" width="120px" /></a> | <a href="https://github.com/gutiory"><img alt="gutiory" src="https://avatars.githubusercontent.com/u/3316502?v=4&s=120" width="120px" /></a> | <a href="https://github.com/JackTreble"><img alt="JackTreble" src="https://avatars.githubusercontent.com/u/4872989?v=4&s=120" width="120px" /></a> |
+| :--: | :--: | :--: |
+| <a href="https://github.com/alejandrohdezma"><sub><b>alejandrohdezma</b></sub></a> | <a href="https://github.com/gutiory"><sub><b>gutiory</b></sub></a> | <a href="https://github.com/JackTreble"><sub><b>JackTreble</b></sub></a> |
 
 ## Usage
 
