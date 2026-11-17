@@ -39,7 +39,8 @@ import org.http4s.syntax.AllSyntax
 import org.typelevel.ci.CIString
 import org.typelevel.vault.Key
 
-trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax { self: CatsEffectSuite =>
+trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax with CirceMUnitSyntax {
+  self: CatsEffectSuite =>
 
   implicit class Http4sMUnitClientTypeOps(t: Client.type) {
 
@@ -79,41 +80,18 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
 
   }
 
-  /** Asserts that the obtained JSON equals `expected`, where a string in `expected` that is the marker of one of the
-    * `placeholders` in scope stands for any value that placeholder accepts.
-    *
-    * On failure the diff shows the obtained document with every value that satisfied its placeholder replaced by the
-    * marker, so the values that did not match are shown as they were received.
+  /** Asserts that the obtained JSON equals `expected`, honoring the placeholders in `expected`:
     *
     * {{{
     * val expected = json"""{ "id": "<uuid>", "name": "Jose", "created_at": "<recent timestamp>" }"""
     *
     * assertIOJson(response.as[Json], expected)
     * }}}
+    *
+    * See `munit.Placeholders` for the default placeholders and how to add your own.
     */
   def assertIOJson(obtained: IO[Json], expected: Json)(implicit placeholders: Placeholders, loc: Location): IO[Unit] =
-    assertIO(obtained.map(_.withPlaceholders(expected)), expected)
-
-  implicit final class Http4sMUnitJsonOps(json: Json) {
-
-    /** `json` with every value that satisfies the placeholder at the same position in `expected` replaced by that
-      * placeholder's marker.
-      */
-    def withPlaceholders(expected: Json)(implicit placeholders: Placeholders): Json =
-      if (placeholders.find(expected).exists(_.matches(json)))
-        expected
-      else if (json.isObject && expected.isObject)
-        Json.fromFields(json.asObject.get.toList.map { case (key, value) =>
-          key -> expected.asObject.get(key).fold(value)(value.withPlaceholders)
-        })
-      else if (json.isArray && expected.isArray)
-        Json.fromValues {
-          json.asArray.get.zip(expected.asArray.get).map { case (value, expected) => value.withPlaceholders(expected) }
-        }
-      else
-        json
-
-  }
+    obtained.map(assertEquals(_, expected))
 
   implicit final class Http4sMunitCIStringOps(ci: CIString) {
 

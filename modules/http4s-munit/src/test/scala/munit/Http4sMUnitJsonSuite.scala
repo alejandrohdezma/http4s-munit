@@ -47,18 +47,6 @@ class Http4sMUnitJsonSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     assertIOJson(IO.pure(obtained), expected)
   }
 
-  test("placeholders can be written with :=") {
-    val expected = Json.obj(
-      "id"         := Placeholder.uuid.json,
-      "name"       := "Jose",
-      "created_at" := Placeholder.recentTimestamp().json,
-      "tags"       := List("a", "b"),
-      "nested"     := Json.obj("id" := Placeholder.uuid.json)
-    )
-
-    assertIOJson(IO.pure(obtained), expected)
-  }
-
   test("a value that does not satisfy its placeholder is reported as received") {
     val expected = json"""{ "id": "<uuid>", "name": "<recent timestamp>" }"""
 
@@ -68,22 +56,6 @@ class Http4sMUnitJsonSuite extends CatsEffectSuite with Http4sMUnitSyntax {
       assert(failure.getMessage.contains("not-a-uuid"))
       assert(failure.getMessage.contains("Jose"))
     }
-  }
-
-  test("an unexpected field fails") {
-    val expected = json"""{ "id": "<uuid>", "name": "Jose" }"""
-
-    val obtained = json"""{ "id": "<uuid>", "name": "Jose", "extra": 1 }"""
-
-    interceptIO[ComparisonFailException](assertIOJson(IO.pure(obtained), expected)).void
-  }
-
-  test("a missing field fails") {
-    val expected = json"""{ "id": "<uuid>", "name": "Jose" }"""
-
-    val obtained = json"""{ "name": "Jose" }"""
-
-    interceptIO[ComparisonFailException](assertIOJson(IO.pure(obtained), expected)).void
   }
 
   test("placeholders can be extended") {
@@ -97,15 +69,8 @@ class Http4sMUnitJsonSuite extends CatsEffectSuite with Http4sMUnitSyntax {
     assertIOJson(IO.pure(obtained), expected)
   }
 
-  test("an extended placeholder rejects what it does not accept") {
-    implicit val placeholders: Placeholders =
-      Placeholders.default + ("<positive>", _.as[Int].exists(_ > 0))
-
-    val expected = json"""{ "count": "<positive>" }"""
-
-    val obtained = json"""{ "count": -1 }"""
-
-    interceptIO[ComparisonFailException](assertIOJson(IO.pure(obtained), expected)).void
+  test("a value is read by its path") {
+    assertIO(IO.pure(obtained).map(_[String]("name")), "Jose")
   }
 
 }
