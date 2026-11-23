@@ -25,6 +25,7 @@ import cats.effect.Resource
 import cats.effect.SyncIO
 import cats.syntax.all._
 
+import io.circe.Json
 import org.http4s.AuthedRequest
 import org.http4s.Header
 import org.http4s.HttpApp
@@ -38,7 +39,8 @@ import org.http4s.syntax.AllSyntax
 import org.typelevel.ci.CIString
 import org.typelevel.vault.Key
 
-trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax { self: CatsEffectSuite =>
+trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllSyntax with CirceMUnitSyntax {
+  self: CatsEffectSuite =>
 
   implicit class Http4sMUnitClientTypeOps(t: Client.type) {
 
@@ -77,6 +79,19 @@ trait Http4sMUnitSyntax extends Http4sDsl[IO] with Http4sClientDsl[IO] with AllS
       pf => ResourceFunFixture(f(from(pf)))
 
   }
+
+  /** Asserts that the obtained JSON equals `expected`, honoring the placeholders in `expected`:
+    *
+    * {{{
+    * val expected = json"""{ "id": "<uuid>", "name": "Jose", "created_at": "<recent timestamp>" }"""
+    *
+    * assertIOJson(response.as[Json], expected)
+    * }}}
+    *
+    * See `munit.Placeholders` for the default placeholders and how to add your own.
+    */
+  def assertIOJson(obtained: IO[Json], expected: Json)(implicit placeholders: Placeholders, loc: Location): IO[Unit] =
+    obtained.map(assertEquals(_, expected))
 
   implicit final class Http4sMunitCIStringOps(ci: CIString) {
 

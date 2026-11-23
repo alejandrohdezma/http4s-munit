@@ -604,3 +604,32 @@ class TestContainersSuite extends munit.Http4sSuite {
 
 }
 ```
+### Asserting JSON bodies with placeholders
+
+`assertIOJson` compares an obtained JSON document with an expected one, where some values are not known in advance: an id the server generated, a timestamp of the request. Those are written as placeholders, strings that stand for any value they accept:
+
+```scala mdoc:compile-only
+import cats.effect.IO
+
+import io.circe.Json
+import io.circe.literal._
+import org.http4s.HttpRoutes
+import org.http4s.circe._
+
+class UsersSuite extends munit.Http4sSuite {
+
+  override def http4sMUnitClientResource = HttpRoutes.of[IO] { case POST -> Root / "users" =>
+    Created(json"""{ "id": "6ba7b810-9dad-11d1-80b4-00c04fd430c8", "name": "Jose", "created_at": "2026-01-01T00:00:00Z" }""")
+  }.orFail.asClient
+
+  test(POST(json"""{ "name": "Jose" }""", uri"users")) { response =>
+    assertIOJson(
+      response.as[Json],
+      json"""{ "id": "<uuid>", "name": "Jose", "created_at": "<recent timestamp>" }"""
+    )
+  }
+
+}
+```
+
+Placeholders come from [circe-munit](https://github.com/alejandrohdezma/circe-munit), whose `CirceMUnitSyntax` is part of every `Http4sSuite`: `assertEquals` on two `Json` values honors them too, `json[A]("a", "b")` reads a value by path, and `Placeholders.default + (marker, predicate)` adds your own. See its README for the default placeholders and the details.
